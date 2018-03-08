@@ -1,0 +1,70 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Uploads {% if LoggedIn %}<small>Welcome {{ session.username }}</small>{% endif %} </h1>
+  <hr>
+  <h2>Upload New CPC Files</h2>
+  {% if LoggedIn %}
+    <form id="upload-form" action="{{ url_for('uploads') }}" method="POST" enctype="multipart/form-data">
+       <input type="file" name="file">
+       <input type="submit" value="Upload">
+    </form>
+  {% else %}
+    You must be <a href="/login">logged in</a> to upload files
+  {% endif %}
+  <hr>
+
+  {% if AllCPCFiles %}
+    <h2>All Maps</h2>
+    <table class="table table-striped">
+      <tr>
+        <th>ID</th>
+        <th>CPC filename</th>
+        <th>Date of walk</th>
+        <th>Uploaded by</th>
+        <th>Upload date</th>
+        <th></th>
+        <th><div data-toggle="tooltip" title="Plot map showing only the selected route">Single route</div></th>
+        <th><div data-toggle="tooltip" title="Plot map showing the selected route and all other routes walked on the same day">Multiple routes</div></th>
+      </tr>
+      {% for file in AllCPCFiles %}
+        <tr>
+          <td>{{file.id}}</td>
+          <td>
+            {% if LoggedIn %}
+              {% if file.username == session.username %}
+                <form action="{{url_for('download', id=file.id)}}" method="post">
+                  <a href="#" onclick="this.parentNode.submit()">{{file.filename}}</a>
+                </form>
+              {% else %}
+                {{file.filename}}
+              {% endif %}
+            {% else %}
+              {{file.filename}}
+            {% endif %}
+          </td>
+          <td>{{file.start_date}}</td>
+          <td>{{file.username}}</td>
+          <td>{{file.upload_date}}</td>
+          <td>
+            {% if LoggedIn %}
+              {% if file.username == session.username %}
+                <form action="{{url_for('delete_CPCFile', id=file.id)}}" method="post" onsubmit="return confirm('Are you sure?');">
+                  <input type="hidden" name="_method" value="DELETE">
+                  <input type="submit" value="Delete" class="btn btn-danger pull-right">
+                </form>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            <a href="/maps/{{file.id}}/single" class="btn btn-success" target="_blank">Show Map</a>
+          </td>
+          <td>
+            <a href="/maps/{{file.id}}/multi" class="btn btn-primary" target="_blank">Show Map</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+{% endblock %}

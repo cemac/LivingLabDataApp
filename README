@@ -1,0 +1,18 @@
+Before running this web app, build the sqlite3 database from the ASCII dump file.
+(This is done because the database file is binary, so the ASCII file is better for version control).
+This is done by typing:
+$ sqlite3 LivingLabDataApp.db < LivingLabDataApp.sql
+
+Similarly, to update the dump file before committing to the git repo, type:
+$ sqlite3 LivingLabDataApp.db .dump > LivingLabDataApp.sql
+
+To run the app, simply type:
+$ python3 app.py
+open up a web browser and navigate to the appropriate URL/IP address.
+This will typically be localhost:5000 if running locally.
+
+Note that in order for the app to run successfully, the files AppSecretKey.txt and StravaTokens.txt must be in the app's root directory.
+These files are not version-controlled as they contains sensitive data.
+
+To make any code changes take effect on the server, type:
+$ sudo systemctl restart httpd

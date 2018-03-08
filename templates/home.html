@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <div class="jumbotron text-center">
+    <h1>Welcome to Living Lab Data</h1>
+    <p class="lead">
+      Ever wondered where the air pollution hotspots are around the University of Leeds campus? <br>
+      Volunteers of the <a href="http://sustainability.leeds.ac.uk/the-living-lab/">Living Lab</a> project have been
+        hard at work walking around collecting measurements. <br>
+        See the concentration map from the latest walk below! You can also find maps for all other walks <a href="/uploads" >here</a>. <br>
+        Volunteers wishing to upload new data can do so from the <a href="/uploads" >uploads</a> page by fist <a href="/login">logging in</a>.
+    <p>
+  </div>
+  {% if latest %}
+    <iframe src="/latest" width="100%" height=1000px style="border:none;"></iframe>
+  {% endif %}
+{% endblock %}

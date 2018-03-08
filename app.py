@@ -93,7 +93,7 @@ class RegisterForm(Form):
     confirm = PasswordField('Confirm Password')
 
 #User register
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register-a-new-user', methods=['GET', 'POST'])
 def register():
     #Redirect if already logged in
     if 'logged_in' in session:
@@ -111,7 +111,7 @@ def register():
         result = query_db('SELECT * FROM users WHERE username = ?', [username])
         if result is not None:
             flash('Username already exists', 'danger')
-            return redirect(url_for('register'))
+            return redirect(url_for('register-a-new-user'))
 
         #Create cursor
         db = get_db()

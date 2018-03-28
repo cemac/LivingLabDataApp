@@ -214,7 +214,7 @@ def CreateMap(MergeData,id,MAP_DIR,addMarkers=True):
     plt.savefig("static/colourbar.png", dpi=300, transparent=True)
     return HTMLfile
 
-def BuildMap(MAP_DIR,id,mapFileIn,mapTitle):
+def BuildMap(MAP_DIR,id,mapFileIn,mapTitle,subd=""):
     #find/replace strings
     find = [
     '<title>Google Maps - pygmaps </title>',
@@ -233,7 +233,7 @@ def BuildMap(MAP_DIR,id,mapFileIn,mapTitle):
     'SATELLITE',
     'padding:30px',
     '<h1 style="text-align:center;">'+mapTitle+'</h1>\n\
-  <p style="text-align:center;"><img src="/static/colourbar.png" alt="colour bar" style="width:750px;"></p>\n\
+  <p style="text-align:center;"><img src="'+subd+'/static/colourbar.png" alt="colour bar" style="width:750px;"></p>\n\
   <div id="map_canvas" style="width: 1000px; height: 600px;" class="center-div"></div>']
     #open two files (one to read one to write)
     inFile = open(MAP_DIR+'/'+mapFileIn,'r')
@@ -249,7 +249,7 @@ def BuildMap(MAP_DIR,id,mapFileIn,mapTitle):
         if 'MarkerImage' in line:
             splt=line.split('/')
             hexCode=splt[-1][0:6]
-            line="    var img = new google.maps.MarkerImage('/static/"+hexCode+".png');\n"
+            line="    var img = new google.maps.MarkerImage('"+subd+"/static/"+hexCode+".png');\n"
         #write line to output file
         outFile.write(line)
     #close the files

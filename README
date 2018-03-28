@@ -9,7 +9,7 @@ $ sqlite3 LivingLabDataApp.db .dump > LivingLabDataApp.sql
 To run the app, simply type:
 $ python3 app.py
 open up a web browser and navigate to the appropriate URL/IP address.
-This will typically be localhost:5000/living-lab if running locally.
+This will typically be localhost:5000 if running locally.
 
 Note that in order for the app to run successfully, the files AppSecretKey.txt and StravaTokens.txt must be in the app's root directory.
 These files are not version-controlled as they contains sensitive data.

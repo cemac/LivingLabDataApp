@@ -26,6 +26,11 @@ DATABASE = 'LivingLabDataApp.db'
 assert os.path.exists(DATABASE), "Unable to locate database"
 assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 
+#Set subdomain...
+#If running locally (or index is the domain) set to blank, i.e. subd=""
+#If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
+subd="/living-lab"
+
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
     os.mkdir(CPC_DIR)
@@ -40,11 +45,11 @@ if not os.path.isdir(CPC_DEL_DIR):
 if not os.path.isdir(GPS_DEL_DIR):
     os.mkdir(GPS_DEL_DIR)
 
-#Error handling (flash error message, stay on current page)
+#Assertion error handling (flash error message, stay on uploads page)
 @app.errorhandler(AssertionError)
 def handle_errors(err):
     flash('Error: '+str(err), 'danger')
-    return redirect(url_for(str(request.url_rule)[1:]))
+    return redirect(subd+'/uploads')
 
 #Allowed extensions for file uploads
 def allowed_file(filename):
@@ -74,12 +79,12 @@ def query_db(query, args=(), one=False):
     return (rv[0] if rv else None) if one else (rv if rv else None)
 
 #Index
-@app.route('/living-lab')
+@app.route('/')
 def index():
     if os.path.exists(MAP_DIR+'/latest.html'):
-        return render_template('home.html',latest=True)
+        return render_template('home.html',latest=True,subd=subd)
     else:
-        return render_template('home.html',latest=False)
+        return render_template('home.html',latest=False,subd=subd)
 
 #Register form class
 class RegisterForm(Form):
@@ -93,12 +98,12 @@ class RegisterForm(Form):
     confirm = PasswordField('Confirm Password')
 
 #User register
-@app.route('/living-lab/register-a-new-user', methods=['GET', 'POST'])
+@app.route('/register-a-new-user', methods=['GET', 'POST'])
 def register():
     #Redirect if already logged in
     if 'logged_in' in session:
         flash('Log out first to register a new user', 'danger')
-        return redirect(url_for('index'))
+        return redirect(subd+'/')
     #Otherwise...
     form = RegisterForm(request.form)
     if request.method == 'POST' and form.validate():
@@ -111,7 +116,7 @@ def register():
         result = query_db('SELECT * FROM users WHERE username = ?', [username])
         if result is not None:
             flash('Username already exists', 'danger')
-            return redirect(url_for('register-a-new-user'))
+            return redirect(subd+'/register-a-new-user')
 
         #Create cursor
         db = get_db()
@@ -125,16 +130,16 @@ def register():
 
         flash('You are now registered and can log in', 'success')
 
-        return redirect(url_for('login'))
-    return render_template('register.html', form=form)
+        return redirect(subd+'/login')
+    return render_template('register.html', form=form, subd=subd)
 
 #User login
-@app.route('/living-lab/login', methods=['GET','POST'])
+@app.route('/login', methods=['GET','POST'])
 def login():
     #Redirect if already logged in
     if 'logged_in' in session:
         flash('You are already logged in', 'success')
-        return redirect(url_for('index'))
+        return redirect(subd+'/')
     if request.method == 'POST':
         #Get form fields
         username = request.form['username']
@@ -149,15 +154,15 @@ def login():
                 session['logged_in'] = True
                 session['username'] = username
                 flash('You are now logged in', 'success')
-                return redirect(url_for('index'))
+                return redirect(subd+'/')
             else:
                 error = 'Invalid login'
-                return render_template('login.html', error=error)
+                return render_template('login.html', error=error, subd=subd)
         else:
             error = 'Username not found'
-            return render_template('login.html', error=error)
+            return render_template('login.html', error=error, subd=subd)
 
-    return render_template('login.html')
+    return render_template('login.html', subd=subd)
 
 #Check if user is logged in
 def is_logged_in(f):
@@ -167,32 +172,32 @@ def is_logged_in(f):
             return f(*args, **kwargs)
         else:
             flash('Unauthorised, please login', 'danger')
-            return redirect(url_for('login'))
+            return redirect(subd+'/login')
     return wrap
 
 #Logout
-@app.route('/living-lab/logout')
+@app.route('/logout')
 @is_logged_in
 def logout():
     session.clear()
     flash('You are now logged out', 'success')
-    return redirect(url_for('login'))
+    return redirect(subd+'/login')
 
 #Uploads
-@app.route('/living-lab/uploads', methods=["GET","POST"])
+@app.route('/uploads', methods=["GET","POST"])
 def uploads():
     #If user tries to upload a file
     if request.method == 'POST':
         #No file part:
         if 'file' not in request.files:
             flash('No file part', 'danger')
-            return redirect(url_for('uploads'))
+            return redirect(subd+'/uploads')
         #Get file info
         file = request.files['file']
         #No selected file
         if file.filename == '':
             flash('No file selected', 'danger')
-            return redirect(url_for('uploads'))
+            return redirect(subd+'/uploads')
         #Else upload file (unless bad extension)
         if file and allowed_file(file.filename):
             try:
@@ -224,27 +229,27 @@ def uploads():
             if CPCdate >= latestDate:
                 mapFileIn = GenerateCPCMap.CreateMap(MergeData,str(lastID),MAP_DIR)
                 mapTitle = 'Concentration map for walk commencing '+str(CPCdate)
-                mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,str(lastID),mapFileIn,mapTitle)
+                mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,str(lastID),mapFileIn,mapTitle,subd=subd)
                 os.remove(MAP_DIR+'/'+mapFileIn)
                 if os.path.exists(MAP_DIR+'/latest.html'):
                     os.remove(MAP_DIR+'/latest.html')
                 os.rename(MAP_DIR+'/'+mapFileOut,MAP_DIR+'/latest.html')
             #return
             flash('File uploaded', 'success')
-            return redirect(url_for('uploads'))
+            return redirect(subd+'/uploads')
         else:
             flash('Only .csv files allowed', 'danger')
-            return redirect(url_for('uploads'))
+            return redirect(subd+'/uploads')
     #If user just navigates to page
     AllCPCFiles = query_db('SELECT * FROM CPCFiles')
     if AllCPCFiles is not None:
         AllCPCFiles = reversed(AllCPCFiles)
-        return render_template('uploads.html', AllCPCFiles=AllCPCFiles, LoggedIn=('logged_in' in session))
+        return render_template('uploads.html', AllCPCFiles=AllCPCFiles, LoggedIn=('logged_in' in session),subd=subd)
     else:
-        return render_template('uploads.html',LoggedIn=('logged_in' in session))
+        return render_template('uploads.html',LoggedIn=('logged_in' in session),subd=subd)
 
 #Maps
-@app.route('/living-lab/maps/<string:id>/<string:mapType>')
+@app.route('/maps/<string:id>/<string:mapType>')
 def maps(id,mapType):
     if not os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         abort(404)
@@ -275,7 +280,7 @@ def maps(id,mapType):
             mapFileIn = GenerateCPCMap.CreateMap(MergeDataConcat,id,MAP_DIR,addMarkers=False)
         except Exception as e:
             flash('Error generating map: '+str(e), 'danger')
-            return redirect(url_for('error'))
+            return redirect(subd+'/error')
         mapTitle = 'Concentration map for all walks on '+str(startYMD)
     elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
         try:
@@ -287,11 +292,11 @@ def maps(id,mapType):
             mapFileIn = GenerateCPCMap.CreateMap(MergeData,id,MAP_DIR)
         except Exception as e:
             flash('Error generating map: '+str(e), 'danger')
-            return redirect(url_for('error'))
+            return redirect(subd+'/error')
         mapTitle = 'Concentration map for walk commencing '+start_date
     else:
         abort(404)
-    mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,id,mapFileIn,mapTitle)
+    mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,id,mapFileIn,mapTitle,subd=subd)
     with open(MAP_DIR+'/'+mapFileOut) as f:
         mapText = f.read()
     os.remove(MAP_DIR+'/'+mapFileIn)
@@ -300,12 +305,12 @@ def maps(id,mapType):
 
 
 #Latest map
-@app.route('/living-lab/latest')
+@app.route('/latest')
 def latest():
     return render_template('maps/latest.html')
 
 #Delete CPC file
-@app.route('/living-lab/delete_CPCFile/<string:id>', methods=['POST'])
+@app.route('/delete_CPCFile/<string:id>', methods=['POST'])
 @is_logged_in
 def delete_CPCFile(id):
     #Get start date of entry to be deleted
@@ -343,7 +348,7 @@ def delete_CPCFile(id):
                 MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
                 mapFileIn = GenerateCPCMap.CreateMap(MergeData,str(latestID),MAP_DIR)
                 mapTitle = 'Concentration map for walk commencing '+str(CPCdate)
-                mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,str(latestID),mapFileIn,mapTitle)
+                mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,str(latestID),mapFileIn,mapTitle,subd=subd)
                 os.remove(MAP_DIR+'/'+mapFileIn)
                 os.rename(MAP_DIR+'/'+mapFileOut,MAP_DIR+'/latest.html')
             except:
@@ -353,10 +358,10 @@ def delete_CPCFile(id):
             os.remove(MAP_DIR+'/latest.html')
 
     flash('CPC file deleted', 'success')
-    return redirect(url_for('uploads'))
+    return redirect(subd+'/uploads')
 
 #Download CPC file
-@app.route('/living-lab/download/<string:id>', methods=['POST'])
+@app.route('/download/<string:id>', methods=['POST'])
 def download(id):
     filename = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)['filename']
     if os.path.exists(CPC_DIR+'/CPC_'+id+'.csv'):
@@ -365,7 +370,7 @@ def download(id):
         abort(404)
 
 #Error
-@app.route('/living-lab/error')
+@app.route('/error')
 def error():
     return render_template('error.html')
 

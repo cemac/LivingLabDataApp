@@ -74,7 +74,7 @@ def query_db(query, args=(), one=False):
     return (rv[0] if rv else None) if one else (rv if rv else None)
 
 #Index
-@app.route('/')
+@app.route('/living-lab')
 def index():
     if os.path.exists(MAP_DIR+'/latest.html'):
         return render_template('home.html',latest=True)
@@ -93,7 +93,7 @@ class RegisterForm(Form):
     confirm = PasswordField('Confirm Password')
 
 #User register
-@app.route('/register-a-new-user', methods=['GET', 'POST'])
+@app.route('/living-lab/register-a-new-user', methods=['GET', 'POST'])
 def register():
     #Redirect if already logged in
     if 'logged_in' in session:
@@ -129,7 +129,7 @@ def register():
     return render_template('register.html', form=form)
 
 #User login
-@app.route('/login', methods=['GET','POST'])
+@app.route('/living-lab/login', methods=['GET','POST'])
 def login():
     #Redirect if already logged in
     if 'logged_in' in session:
@@ -171,7 +171,7 @@ def is_logged_in(f):
     return wrap
 
 #Logout
-@app.route('/logout')
+@app.route('/living-lab/logout')
 @is_logged_in
 def logout():
     session.clear()
@@ -179,7 +179,7 @@ def logout():
     return redirect(url_for('login'))
 
 #Uploads
-@app.route('/uploads', methods=["GET","POST"])
+@app.route('/living-lab/uploads', methods=["GET","POST"])
 def uploads():
     #If user tries to upload a file
     if request.method == 'POST':
@@ -244,7 +244,7 @@ def uploads():
         return render_template('uploads.html',LoggedIn=('logged_in' in session))
 
 #Maps
-@app.route('/maps/<string:id>/<string:mapType>')
+@app.route('/living-lab/maps/<string:id>/<string:mapType>')
 def maps(id,mapType):
     if not os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         abort(404)
@@ -300,12 +300,12 @@ def maps(id,mapType):
 
 
 #Latest map
-@app.route('/latest')
+@app.route('/living-lab/latest')
 def latest():
     return render_template('maps/latest.html')
 
 #Delete CPC file
-@app.route('/delete_CPCFile/<string:id>', methods=['POST'])
+@app.route('/living-lab/delete_CPCFile/<string:id>', methods=['POST'])
 @is_logged_in
 def delete_CPCFile(id):
     #Get start date of entry to be deleted
@@ -356,7 +356,7 @@ def delete_CPCFile(id):
     return redirect(url_for('uploads'))
 
 #Download CPC file
-@app.route('/download/<string:id>', methods=['POST'])
+@app.route('/living-lab/download/<string:id>', methods=['POST'])
 def download(id):
     filename = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)['filename']
     if os.path.exists(CPC_DIR+'/CPC_'+id+'.csv'):
@@ -365,7 +365,7 @@ def download(id):
         abort(404)
 
 #Error
-@app.route('/error')
+@app.route('/living-lab/error')
 def error():
     return render_template('error.html')
 

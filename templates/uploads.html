@@ -10,7 +10,7 @@
        <input type="submit" value="Upload">
     </form>
   {% else %}
-    You must be <a href="/login">logged in</a> to upload files
+    You must be <a href="/living-lab/login">logged in</a> to upload files
   {% endif %}
   <hr>
 
@@ -57,10 +57,10 @@
             {% endif %}
           </td>
           <td>
-            <a href="/maps/{{file.id}}/single" class="btn btn-success" target="_blank">Show Map</a>
+            <a href="/living-lab/maps/{{file.id}}/single" class="btn btn-success" target="_blank">Show Map</a>
           </td>
           <td>
-            <a href="/maps/{{file.id}}/multi" class="btn btn-primary" target="_blank">Show Map</a>
+            <a href="/living-lab/maps/{{file.id}}/multi" class="btn btn-primary" target="_blank">Show Map</a>
           </td>
         </tr>
       {% endfor %}

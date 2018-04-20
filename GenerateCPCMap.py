@@ -44,8 +44,13 @@ def ReadCPCFile(CPCtext):
     assert iHeader >= 0, "CPC file data header must contain Time and Concentration fields"
     #Start Date:
     temp=lines[iStartDate].split(',')
-    splt=[ int(x) for x in temp[1].split('/')]
-    startDate=dt.date(splt[2]+2000,splt[0],splt[1])
+    splt=[int(x) for x in temp[1].split('/')]
+    #Year might be in YY or YYYY format:
+    if splt[2]>2000:
+        startYear=splt[2]
+    else:
+        startYear=splt[2]+2000
+    startDate=dt.date(startYear,splt[0],splt[1])
     #Start Time:
     temp=lines[iStartTime].split(',')
     splt=[ int(x) for x in temp[1].split(':')]

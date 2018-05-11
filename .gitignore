@@ -1,0 +1,10 @@
+*.directory
+AppSecretKey.txt
+CPCFiles/
+GPSFiles
+LivingLabDataApp.db
+StravaTokens.txt
+__pycache__/
+deleted/
+static/colourbar.png
+templates/maps/

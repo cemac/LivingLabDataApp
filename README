@@ -7,8 +7,8 @@ Similarly, to update the dump file before committing to the git repo, type:
 $ sqlite3 LivingLabDataApp.db .dump > LivingLabDataApp.sql
 
 To run the app in development mode (on localhost), do the following:
-- In LivingLabDataApp.py, change the subdomain variable (subd) near the top of the script from "/living-lab" to "" (i.e. an empty string)
-- In LivingLabDataApp.py, add "debug=True" inside the parentheses in the call to app.run near the bottom of the script
+- In app.py, change the subdomain variable (subd) near the top of the script from "/living-lab" to "" (i.e. an empty string)
+- In app.py, add "debug=True" inside the parentheses in the call to app.run near the bottom of the script
 - If on the FOE system, load the appropriate python modules by typing: $ module load python3 python-libs
 - Run the application by typing: $ python3 LivingLabDataApp.py
 - Open up a web browser and navigate to localhost:5000

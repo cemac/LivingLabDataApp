@@ -57,14 +57,39 @@
             {% endif %}
           </td>
           <td>
-            <a href={{subd}}/maps/{{file.id}}/single class="btn btn-success" target="_blank">Show Map</a>
+              <div class="dropdown">
+                  <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuSingle_{{file.id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                    Show Map
+                    <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenuSingle_{{file.id}}">
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/single/rb" target="_blank">Rainbow</a></li>
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/single/cb" target="_blank">Colorblind Option</a></li>
+                  </ul>
+              </div>
           </td>
           <td>
-            <a href={{subd}}/maps/{{file.id}}/multi class="btn btn-primary" target="_blank">Show Map</a>
+              <div class="dropdown">
+                  <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuMulti_{{file.id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                    Show Map
+                    <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenuMulti_{{file.id}}">
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/multi/rb" target="_blank">Rainbow</a></li>
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/multi/cb" target="_blank">Colorblind Option</a></li>
+                  </ul>
+              </div>
           </td>
         </tr>
       {% endfor %}
     </table>
   {% endif %}
+{% endblock %}
 
+{% block scripts %}
+    <script>
+        $(document).ready(function(){
+            $('.dropdown-toggle').dropdown();
+        });
+    </script>
 {% endblock %}

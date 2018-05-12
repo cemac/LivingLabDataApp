@@ -29,7 +29,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd="/living-lab"
+subd=""
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -249,8 +249,8 @@ def uploads():
         return render_template('uploads.html',LoggedIn=('logged_in' in session),subd=subd)
 
 #Maps
-@app.route('/maps/<string:id>/<string:mapType>')
-def maps(id,mapType):
+@app.route('/maps/<string:id>/<string:mapType>/<string:colorProfile>')
+def maps(id,mapType,colorProfile):
     if not os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         abort(404)
     start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)['start_date']
@@ -277,7 +277,7 @@ def maps(id,mapType):
                 MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
                 MergeDataAll.append(MergeData)
             MergeDataConcat = pandas.concat(MergeDataAll)
-            mapFileIn = GenerateCPCMap.CreateMap(MergeDataConcat,id,MAP_DIR,addMarkers=False)
+            mapFileIn = GenerateCPCMap.CreateMap(MergeDataConcat,id,MAP_DIR,colorProfile,addMarkers=False)
         except Exception as e:
             flash('Error generating map: '+str(e), 'danger')
             return redirect(subd+'/error')
@@ -289,14 +289,14 @@ def maps(id,mapType):
                 CPCData,CPCdate,CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
             GPSData = pandas.read_pickle(GPS_DIR+'/GPS_'+id+'.pkl')
             MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
-            mapFileIn = GenerateCPCMap.CreateMap(MergeData,id,MAP_DIR)
+            mapFileIn = GenerateCPCMap.CreateMap(MergeData,id,MAP_DIR,colorProfile)
         except Exception as e:
             flash('Error generating map: '+str(e), 'danger')
             return redirect(subd+'/error')
         mapTitle = 'Concentration map for walk commencing '+start_date
     else:
         abort(404)
-    mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,id,mapFileIn,mapTitle,subd=subd)
+    mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,id,mapFileIn,mapTitle,colorProfile,subd=subd)
     with open(MAP_DIR+'/'+mapFileOut) as f:
         mapText = f.read()
     os.remove(MAP_DIR+'/'+mapFileIn)
@@ -375,4 +375,4 @@ def error():
     return render_template('error.html')
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

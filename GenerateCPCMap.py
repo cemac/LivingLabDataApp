@@ -163,10 +163,23 @@ def NearestNghbr(CPCData,GPSData):
     return MergeData
 
 
-def CreateMap(MergeData,id,MAP_DIR,addMarkers=True):
+def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb",addMarkers=True):
     #conc data limits/colours:
     binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
-    colsHex=['#00FF40','#00FF00','#40FF00','#80FF00','#BFFF00','#FFFF00','#FFBF00','#FF8000','#FF0000','#8000FF']
+
+    # List of Colormaps: https://matplotlib.org/users/colormaps.html
+    colsHex = [];
+    if(colorProfile == "rb"):
+        colsHex=['#00FF40','#00FF00','#40FF00','#80FF00','#BFFF00','#FFFF00','#FFBF00','#FF8000','#FF0000','#8000FF']
+    else:
+        if(colorProfile == "cb"):
+            colorMap = 'viridis'
+        else:
+            colorMap = 'viridis'                      # if error, default to colorblind
+        cmap = matplotlib.cm.get_cmap(colorMap)
+        for i in range(0,len(binLims)):               # generate a color for each bin
+            colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))));
+
     #Plot using gmplot:
     lonMin=min(MergeData['lon'])
     lonMax=max(MergeData['lon'])
@@ -216,10 +229,10 @@ def CreateMap(MergeData,id,MAP_DIR,addMarkers=True):
                                     spacing='uniform',
                                     orientation='horizontal')
     cb.set_label('particles per cubic centimetre')
-    plt.savefig("static/colourbar.png", dpi=300, transparent=True)
+    plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
     return HTMLfile
 
-def BuildMap(MAP_DIR,id,mapFileIn,mapTitle,subd=""):
+def BuildMap(MAP_DIR,id,mapFileIn,mapTitle,colorProfile="rb",subd=""):
     #find/replace strings
     find = [
     '<title>Google Maps - pygmaps </title>',
@@ -238,7 +251,7 @@ def BuildMap(MAP_DIR,id,mapFileIn,mapTitle,subd=""):
     'SATELLITE',
     'padding:30px',
     '<h1 style="text-align:center;">'+mapTitle+'</h1>\n\
-  <p style="text-align:center;"><img src="'+subd+'/static/colourbar.png" alt="colour bar" style="width:750px;"></p>\n\
+  <p style="text-align:center;"><img src="'+subd+'/static/colourbar_'+colorProfile+'.png" alt="colour bar" style="width:750px;"></p>\n\
   <div id="map_canvas" style="width: 1000px; height: 600px;" class="center-div"></div>']
     #open two files (one to read one to write)
     inFile = open(MAP_DIR+'/'+mapFileIn,'r')
@@ -261,3 +274,10 @@ def BuildMap(MAP_DIR,id,mapFileIn,mapTitle,subd=""):
     inFile.close()
     outFile.close()
     return mapFileOut
+
+
+def rgba_to_hex(rgba_color) :
+    red = int(rgba_color[0]*255)
+    green = int(rgba_color[1]*255)
+    blue = int(rgba_color[2]*255)
+    return '#{r:02x}{g:02x}{b:02x}'.format(r=red,g=green,b=blue)

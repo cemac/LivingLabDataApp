@@ -84,6 +84,7 @@ def index():
     id = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1', one=True)['id']
     start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?', (id,), one=True)['start_date']
 
+    # TODO Make code DRY
     colorProfile = 'rb';
     try:
         with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
@@ -370,28 +371,6 @@ def download(id):
         return send_from_directory(CPC_DIR,'CPC_'+id+'.csv',as_attachment=True,attachment_filename=filename)
     else:
         abort(404)
-
-#gmaps test
-@app.route('/testmap/<string:id>/<string:colorProfile>')
-def testmap(id, colorProfile):
-    start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?', (id,), one=True)['start_date']
-    parseDate = parse(start_date)
-    startYMD = dt.date(parseDate.year, parseDate.month, parseDate.day)
-    AllCPCFiles = query_db('SELECT * FROM CPCFiles')
-    numCPCFiles = len(AllCPCFiles)
-    allDates = [parse(x['start_date']) for x in AllCPCFiles]
-    YMD = []
-    for date in allDates:
-        YMD.append(dt.date(date.year, date.month, date.day))
-    with open(CPC_DIR + '/CPC_' + id + '.csv', 'r', encoding='utf-8') as CPCFile:
-        CPCtext = CPCFile.read()
-        CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-    GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + id + '.pkl')
-    MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
-    data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile)
-    colorbarURL = subd+'/static/colourbar_'+colorProfile +'.png'
-    mapTitle = 'Concentration map for walk commencing ' + start_date
-    return render_template('maps/index.html', mapTitle=mapTitle, colorbarURL=colorbarURL, data=data);
 
 #Error
 @app.route('/error')

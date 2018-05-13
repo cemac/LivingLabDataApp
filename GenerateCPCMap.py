@@ -163,7 +163,7 @@ def NearestNghbr(CPCData,GPSData):
     return MergeData
 
 
-def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb",addMarkers=True):
+def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb"):
     #conc data limits/colours:
     binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
 
@@ -180,6 +180,8 @@ def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb",addMarkers=True):
         for i in range(0,len(binLims)):               # generate a color for each bin
             colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))));
 
+    print(colsHex);
+
     #Plot using gmplot:
     lonMin=min(MergeData['lon'])
     lonMax=max(MergeData['lon'])
@@ -188,28 +190,9 @@ def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb",addMarkers=True):
     lats=MergeData['lat'].values
     lons=MergeData['lon'].values
     concs=MergeData['conc'].values
-    gmap = gmplot.GoogleMapPlotter(np.mean([latMin,latMax]),np.mean([lonMin,lonMax]),zoom=16,apikey='AIzaSyCxHEzf7TNaVsha6owD_DgbZwzX16_cCcE')
-    circSize=7
-    for i in np.arange(0,len(lats)):
-        if concs[i] <= binLims[0]:
-            gmap.circle(lats[i],lons[i],radius=circSize,color=colsHex[0])
-        for j in np.arange(0,len(binLims)-1):
-            if concs[i] > binLims[j] and concs[i] <= binLims[j+1]:
-                gmap.circle(lats[i],lons[i],radius=circSize,color=colsHex[j+1])
-        if concs[i] > binLims[-1]:
-            gmap.circle(lats[i],lons[i],radius=circSize,color=colsHex[-1])
-    #Add start and end markers
-    if addMarkers:
-        gmap.marker(lats[0],lons[0],title="START",color="#008000")
-        gmap.marker(lats[-1],lons[-1],title="FINISH",color="#FF0000")
-        #Add N more markers at regular intervals
-        N=10
-        for i in np.arange(1,N+1):
-            j=int(len(lats)*(i/(N+1)))
-            gmap.marker(lats[j],lons[j],title=i,color="#D3D3D3")
-    #Write to file
-    HTMLfile = 'map_'+id+'.html'
-    gmap.draw(MAP_DIR+'/'+HTMLfile)
+    meanLat = np.mean([latMin,latMax])
+    meanLon = np.mean([lonMin,lonMax])
+
     #Output color bar:
     fig = plt.figure(figsize=(8, 1))
     axs = fig.add_axes([0.05, 0.55, 0.9, 0.2])
@@ -230,7 +213,9 @@ def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb",addMarkers=True):
                                     orientation='horizontal')
     cb.set_label('particles per cubic centimetre')
     plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
-    return HTMLfile
+
+    data = [lats.tolist(), lons.tolist(), concs.tolist(), meanLat, meanLon, binLims, colsHex]
+    return data
 
 def BuildMap(MAP_DIR,id,mapFileIn,mapTitle,colorProfile="rb",subd=""):
     #find/replace strings

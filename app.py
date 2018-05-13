@@ -277,11 +277,12 @@ def maps(id,mapType,colorProfile):
                 MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
                 MergeDataAll.append(MergeData)
             MergeDataConcat = pandas.concat(MergeDataAll)
-            mapFileIn = GenerateCPCMap.CreateMap(MergeDataConcat,id,MAP_DIR,colorProfile,addMarkers=False)
+            data = GenerateCPCMap.CreateMap(MergeDataConcat,id,MAP_DIR,colorProfile)
         except Exception as e:
             flash('Error generating map: '+str(e), 'danger')
             return redirect(subd+'/error')
         mapTitle = 'Concentration map for all walks on '+str(startYMD)
+        markers = 'false';
     elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
         try:
             with open(CPC_DIR+'/CPC_'+id+'.csv','r', encoding='utf-8') as CPCFile:
@@ -289,19 +290,16 @@ def maps(id,mapType,colorProfile):
                 CPCData,CPCdate,CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
             GPSData = pandas.read_pickle(GPS_DIR+'/GPS_'+id+'.pkl')
             MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
-            mapFileIn = GenerateCPCMap.CreateMap(MergeData,id,MAP_DIR,colorProfile)
+            data = GenerateCPCMap.CreateMap(MergeData,id,MAP_DIR,colorProfile)
         except Exception as e:
             flash('Error generating map: '+str(e), 'danger')
             return redirect(subd+'/error')
         mapTitle = 'Concentration map for walk commencing '+start_date
+        markers = 'true'
     else:
         abort(404)
-    mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,id,mapFileIn,mapTitle,colorProfile,subd=subd)
-    with open(MAP_DIR+'/'+mapFileOut) as f:
-        mapText = f.read()
-    os.remove(MAP_DIR+'/'+mapFileIn)
-    os.remove(MAP_DIR+'/'+mapFileOut)
-    return mapText
+    colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
+    return render_template('maps/index.html', mapTitle=mapTitle, colorbarURL=colorbarURL, data=data, markers=markers);
 
 
 #Latest map
@@ -368,6 +366,28 @@ def download(id):
         return send_from_directory(CPC_DIR,'CPC_'+id+'.csv',as_attachment=True,attachment_filename=filename)
     else:
         abort(404)
+
+#gmaps test
+@app.route('/testmap/<string:id>/<string:colorProfile>')
+def testmap(id, colorProfile):
+    start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?', (id,), one=True)['start_date']
+    parseDate = parse(start_date)
+    startYMD = dt.date(parseDate.year, parseDate.month, parseDate.day)
+    AllCPCFiles = query_db('SELECT * FROM CPCFiles')
+    numCPCFiles = len(AllCPCFiles)
+    allDates = [parse(x['start_date']) for x in AllCPCFiles]
+    YMD = []
+    for date in allDates:
+        YMD.append(dt.date(date.year, date.month, date.day))
+    with open(CPC_DIR + '/CPC_' + id + '.csv', 'r', encoding='utf-8') as CPCFile:
+        CPCtext = CPCFile.read()
+        CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
+    GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + id + '.pkl')
+    MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
+    data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile)
+    colorbarURL = subd+'/static/colourbar_'+colorProfile +'.png'
+    mapTitle = 'Concentration map for walk commencing ' + start_date
+    return render_template('maps/index.html', mapTitle=mapTitle, colorbarURL=colorbarURL, data=data);
 
 #Error
 @app.route('/error')

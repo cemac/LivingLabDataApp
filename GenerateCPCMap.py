@@ -217,50 +217,6 @@ def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb"):
     data = [lats.tolist(), lons.tolist(), concs.tolist(), meanLat, meanLon, binLims, colsHex]
     return data
 
-def BuildMap(MAP_DIR,id,mapFileIn,mapTitle,colorProfile="rb",subd=""):
-    #find/replace strings
-    find = [
-    '<title>Google Maps - pygmaps </title>',
-    'ROADMAP',
-    'padding:0px',
-    '<div id="map_canvas" style="width: 100%; height: 100%;"></div>']
-    replace = [
-    '<title>Map</title>\n\
-<style>\n\
-.center-div\n\
-{\n\
-  margin: 0 auto;\n\
-  width: 100px;\n\
-}\n\
-</style>',
-    'SATELLITE',
-    'padding:30px',
-    '<h1 style="text-align:center;">'+mapTitle+'</h1>\n\
-  <p style="text-align:center;"><img src="'+subd+'/static/colourbar_'+colorProfile+'.png" alt="colour bar" style="width:750px;"></p>\n\
-  <div id="map_canvas" style="width: 1000px; height: 600px;" class="center-div"></div>']
-    #open two files (one to read one to write)
-    inFile = open(MAP_DIR+'/'+mapFileIn,'r')
-    mapFileOut = 'map_'+id+'_mod.html'
-    outFile = open(MAP_DIR+'/'+mapFileOut,'w')
-    #Loop over lines in input file
-    for line in inFile:
-        #find/replace strings:
-        for i in np.arange(0,len(find)):
-            if find[i] in line:
-                line = line.replace(find[i],replace[i])
-        #contains/replace strings
-        if 'MarkerImage' in line:
-            splt=line.split('/')
-            hexCode=splt[-1][0:6]
-            line="    var img = new google.maps.MarkerImage('"+subd+"/static/"+hexCode+".png');\n"
-        #write line to output file
-        outFile.write(line)
-    #close the files
-    inFile.close()
-    outFile.close()
-    return mapFileOut
-
-
 def rgba_to_hex(rgba_color) :
     red = int(rgba_color[0]*255)
     green = int(rgba_color[1]*255)

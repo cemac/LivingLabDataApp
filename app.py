@@ -81,10 +81,24 @@ def query_db(query, args=(), one=False):
 #Index
 @app.route('/')
 def index():
-    if os.path.exists(MAP_DIR+'/latest.html'):
-        return render_template('home.html',latest=True,subd=subd)
-    else:
-        return render_template('home.html',latest=False,subd=subd)
+    id = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1', one=True)['id']
+    start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?', (id,), one=True)['start_date']
+
+    colorProfile = 'rb';
+    try:
+        with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
+            CPCtext = CPCFile.read()
+            CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
+        GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(id) + '.pkl')
+        MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
+        data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile);
+    except Exception as e:
+        flash('Error generating map: ' + str(e), 'danger')
+        return redirect(subd + '/error')
+    colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
+    mapTitle = 'Concentration map for walk commencing ' + start_date
+
+    return render_template('home.html',subd=subd, mapTitle=mapTitle, colorbarURL=colorbarURL, data=data)
 
 #Register form class
 class RegisterForm(Form):
@@ -224,16 +238,6 @@ def uploads():
             CPCFile.close()
             #save GPS dataframe
             GPSData.to_pickle(GPS_DIR+'/GPS_'+str(lastID)+'.pkl')
-            #Save map as latest if applicable
-            latestDate = parse(query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1',one=True)['start_date'])
-            if CPCdate >= latestDate:
-                mapFileIn = GenerateCPCMap.CreateMap(MergeData,str(lastID),MAP_DIR)
-                mapTitle = 'Concentration map for walk commencing '+str(CPCdate)
-                mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,str(lastID),mapFileIn,mapTitle,subd=subd)
-                os.remove(MAP_DIR+'/'+mapFileIn)
-                if os.path.exists(MAP_DIR+'/latest.html'):
-                    os.remove(MAP_DIR+'/latest.html')
-                os.rename(MAP_DIR+'/'+mapFileOut,MAP_DIR+'/latest.html')
             #return
             flash('File uploaded', 'success')
             return redirect(subd+'/uploads')

@@ -26,31 +26,53 @@ function addCPCData (lats, lons, concs, binLims, colsHex) {
 }
 
 function addCPCLines (lats, lons, concs, binLims, colsHex) {
-    var marker, iconStyle, iconColor;
-
 
     for (var i = 0; i < lats.length-1; i++)
     {
-        // get average concentration between the points
-        var meanConc = (concs[i] + concs[i+1])/2;
+        // Uses a javascript closure to make each infowindow have different data (position, content)
+        // without the closure, there is only one content and position
+        ( function() {
 
-        var color = getColor(meanConc, binLims, colsHex);
+                   // get average concentration between the points
+            var meanConc = Math.ceil((concs[i] + concs[i+1])/2);
+            var midPoint = [
+                (lats[i] + lats[i+1]) / 2,
+                (lons[i] + lons[i+1]) / 2
+            ];
 
-        var tail = new google.maps.LatLng(lats[i],lons[i]);
-        var head = new google.maps.LatLng(lats[i+1],lons[i+1]);
+            var color = getColor(meanConc, binLims, colsHex);
 
-        var lineCoordinates = [tail, head];
+            var tail = new google.maps.LatLng(lats[i],lons[i]);
+            var head = new google.maps.LatLng(lats[i+1],lons[i+1]);
 
-        new google.maps.Polyline({
-          path: lineCoordinates,
-          strokeColor: color,
-          strokeOpacity: 0.6,
-          strokeWeight: 7,
-          map: map
-        });
+            var lineCoordinates = [tail, head];
+
+            var polyline = new google.maps.Polyline({
+              path: lineCoordinates,
+              strokeColor: color,
+              strokeOpacity: 0.6,
+              strokeWeight: 7,
+              map: map
+            });
+
+            var content = meanConc.toString();
+            var position = {lat: midPoint[0], lng: midPoint[1]};
+            var clickFunction = function(content, position) {
+                var infoWindow = new google.maps.InfoWindow({
+                    content: content
+                })
+                infoWindow.setPosition(position);
+                infoWindow.open(map);
+            }
+
+            google.maps.event.addListener(polyline, 'click', function(event){
+                clickFunction(content, position);
+            })
+        }())
     }
 
 }
+
 
 function addMarkers(lats, lons, N=10)
 {

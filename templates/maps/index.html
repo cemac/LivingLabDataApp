@@ -18,6 +18,7 @@
 {% endblock %}
 
 {% block scripts %}
+    // TODO: Add query string for Cache busting
     <script src="/static/scripts/maps.js"></script>
 
     <script>
@@ -38,7 +39,8 @@
             mapTypeId: 'hybrid'
         });
 
-        addCPCData(lats, lons, concs, binLims, colsHex);
+        addCPCLines(lats, lons, concs, binLims, colsHex);
+
         if({{markers}})
         {
             addMarkers(lats, lons);

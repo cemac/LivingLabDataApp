@@ -6,6 +6,9 @@ $ sqlite3 LivingLabDataApp.db < LivingLabDataApp.sql
 Similarly, to update the dump file before committing to the git repo, type:
 $ sqlite3 LivingLabDataApp.db .dump > LivingLabDataApp.sql
 
+Note that in order for the app to run successfully, the files AppSecretKey.txt and StravaTokens.txt must be in the app's root directory.
+These files are not version-controlled as they contains sensitive data.
+
 To run the app in development mode (on localhost), do the following:
 - In app.py, change the subdomain variable (subd) near the top of the script from "/living-lab" to "" (i.e. an empty string)
 - In app.py, add "debug=True" inside the parentheses in the call to app.run near the bottom of the script
@@ -13,10 +16,8 @@ To run the app in development mode (on localhost), do the following:
 - Run the application by typing: $ python3 app.py
 - Open up a web browser and navigate to localhost:5000
 
-Note that in order for the app to run successfully, the files AppSecretKey.txt and StravaTokens.txt must be in the app's root directory.
-These files are not version-controlled as they contains sensitive data.
+***Don't forget to reset subd and remove from debug mode before committing to GitHub (production mode)***
 
-Don't forget to reset subd and remove from debug mode before committing to GitHub (production mode).
 To make any code changes take effect on the server, ssh into it, update the git repo, and perform a restart:
 $ ssh -Y cemac-ll-01
 $ cd /www/living_lab/

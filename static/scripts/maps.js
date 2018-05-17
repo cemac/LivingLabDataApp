@@ -35,18 +35,18 @@ function addCPCData (lats, lons, concs, binLims, colsHex) {
     }
 }
 
-function addMarkers(lats, lons, N=10)
+function addMarkers(lats, lons, subd="", N=10)
 {
     var startMarker = new google.maps.Marker({
         position: {lat: lats[0], lng: lons[0]},
         title: "START",
-        icon: '/static/008000.png',
+        icon: subd+'/static/008000.png',
         map: map
     })
     var endMarker = new google.maps.Marker({
         position: {lat: lats[lats.length-1], lng: lons[lons.length-1]},
         title: "END",
-        icon: '/static/FF0000.png',
+        icon: subd+"/static/FF0000.png",
         map: map
     })
 
@@ -59,7 +59,7 @@ function addMarkers(lats, lons, N=10)
         new google.maps.Marker({
             position: {lat: lats[j], lng: lons[j]},
             title: i.toString(),
-            icon: '/static/D3D3D3.png',
+            icon: subd+'/static/D3D3D3.png',
             map: map
         })
     }

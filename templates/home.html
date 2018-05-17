@@ -30,7 +30,7 @@ You can see the concentration map for the latest monitoring walk below and find 
 {% endblock %}
 
 {% block scripts %}
-    <script src="/static/scripts/maps.js"></script>
+    <script src="{{subd}}/static/scripts/maps.js"></script>
 
     <script>
         var lats    = {{ data[0]|tojson }};
@@ -50,7 +50,7 @@ You can see the concentration map for the latest monitoring walk below and find 
                 mapTypeId: 'hybrid'
             })
 
-            addCPCData(lats, lons, concs, binLims, colsHex);
+            addCPCData(lats, lons, conc s, binLims, colsHex);
         }
     </script>
 

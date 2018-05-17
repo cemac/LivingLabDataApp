@@ -81,18 +81,16 @@ def query_db(query, args=(), one=False):
 #Index
 @app.route('/')
 def index():
-    id = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1', one=True)['id']
-    start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?', (id,), one=True)['start_date']
-
-    # TODO Make code DRY
-    colorProfile = 'rb';
+    colorProfile = 'rb'
     try:
+        id = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1', one=True)['id']
+        start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?', (id,), one=True)['start_date']
         with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
             CPCtext = CPCFile.read()
             CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
         GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(id) + '.pkl')
         MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
-        data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile);
+        data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile)
     except Exception as e:
         flash('Error generating map: ' + str(e), 'danger')
         return redirect(subd + '/error')
@@ -287,7 +285,7 @@ def maps(id,mapType,colorProfile):
             flash('Error generating map: '+str(e), 'danger')
             return redirect(subd+'/error')
         mapTitle = 'Concentration map for all walks on '+str(startYMD)
-        markers = 'false';
+        markers = 'false'
     elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
         try:
             with open(CPC_DIR+'/CPC_'+id+'.csv','r', encoding='utf-8') as CPCFile:
@@ -304,13 +302,7 @@ def maps(id,mapType,colorProfile):
     else:
         abort(404)
     colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
-    return render_template('maps/index.html', mapTitle=mapTitle, colorbarURL=colorbarURL, data=data, markers=markers);
-
-
-#Latest map
-@app.route('/latest')
-def latest():
-    return render_template('maps/latest.html')
+    return render_template('maps/index.html', mapTitle=mapTitle, colorbarURL=colorbarURL, data=data, markers=markers)
 
 #Delete CPC file
 @app.route('/delete_CPCFile/<string:id>', methods=['POST'])
@@ -334,31 +326,6 @@ def delete_CPCFile(id):
         os.rename(CPC_DIR+'/CPC_'+id+'.csv',CPC_DEL_DIR+'/CPC_'+id+'.csv')
     if os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         os.rename(GPS_DIR+'/GPS_'+id+'.pkl',GPS_DEL_DIR+'/GPS_'+id+'.pkl')
-
-    #Delete and update latest map if this was it:
-    latestByDate = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1',one=True)
-    if latestByDate is not None:
-        latestDate = parse(latestByDate['start_date'])
-        latestID = latestByDate['id']
-        if delDate > latestDate:
-            if os.path.exists(MAP_DIR+'/latest.html'):
-                os.remove(MAP_DIR+'/latest.html')
-            try:
-                with open(CPC_DIR+'/CPC_'+str(latestID)+'.csv','r', encoding='utf-8') as CPCFile:
-                    CPCtext = CPCFile.read()
-                    CPCData,CPCdate,CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-                GPSData = pandas.read_pickle(GPS_DIR+'/GPS_'+str(latestID)+'.pkl')
-                MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
-                mapFileIn = GenerateCPCMap.CreateMap(MergeData,str(latestID),MAP_DIR)
-                mapTitle = 'Concentration map for walk commencing '+str(CPCdate)
-                mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,str(latestID),mapFileIn,mapTitle,subd=subd)
-                os.remove(MAP_DIR+'/'+mapFileIn)
-                os.rename(MAP_DIR+'/'+mapFileOut,MAP_DIR+'/latest.html')
-            except:
-                raise
-    else:
-        if os.path.exists(MAP_DIR+'/latest.html'):
-            os.remove(MAP_DIR+'/latest.html')
 
     flash('CPC file deleted', 'success')
     return redirect(subd+'/uploads')

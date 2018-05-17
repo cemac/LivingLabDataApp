@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="/static/scripts/maps.js"></script>
+    <script src="{{subd}}/static/scripts/maps.js"></script>
 
     <script>
         var lats    = {{ data[0]|tojson }};
@@ -41,7 +41,7 @@
         addCPCData(lats, lons, concs, binLims, colsHex);
         if({{markers}})
         {
-            addMarkers(lats, lons);
+            addMarkers(lats, lons, {{ subd }});
         }
       }
     </script>

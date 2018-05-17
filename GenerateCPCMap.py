@@ -15,7 +15,6 @@ import os
 import sys
 import pandas as pd
 import datetime as dt
-import gmplot
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
@@ -168,19 +167,20 @@ def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb"):
     binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
 
     # List of Colormaps: https://matplotlib.org/users/colormaps.html
-    colsHex = [];
-    if(colorProfile == "rb"):
+    colsHex = []
+    if(colorProfile == "gr"):
         colsHex=['#00FF40','#00FF00','#40FF00','#80FF00','#BFFF00','#FFFF00','#FFBF00','#FF8000','#FF0000','#8000FF']
     else:
-        if(colorProfile == "cb"):
+        if(colorProfile == "bg"):
             colorMap = 'viridis'
+        elif(colorProfile == "by"):
+            colorMap = 'inferno'
         else:
             colorMap = 'viridis'                      # if error, default to colorblind
         cmap = matplotlib.cm.get_cmap(colorMap)
-        for i in range(0,len(binLims)):               # generate a color for each bin
-            colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))));
 
-    print(colsHex);
+        for i in range(0,len(binLims)+1):               # generate a color for each bin
+            colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))))
 
     #Plot using gmplot:
     lonMin=min(MergeData['lon'])

@@ -6,5 +6,6 @@ LivingLabDataApp.db
 StravaTokens.txt
 __pycache__/
 deleted/
-static/colourbar.png
-templates/maps/latest.html
+venv/
+.idea/
+static/colourbar*

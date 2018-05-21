@@ -15,7 +15,6 @@ import os
 import sys
 import pandas as pd
 import datetime as dt
-import gmplot
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
@@ -163,10 +162,26 @@ def NearestNghbr(CPCData,GPSData):
     return MergeData
 
 
-def CreateMap(MergeData,id,MAP_DIR,addMarkers=True):
+def CreateMap(MergeData,id,MAP_DIR,colorProfile="gr"):
     #conc data limits/colours:
     binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
-    colsHex=['#00FF40','#00FF00','#40FF00','#80FF00','#BFFF00','#FFFF00','#FFBF00','#FF8000','#FF0000','#8000FF']
+
+    # List of Colormaps: https://matplotlib.org/users/colormaps.html
+    colsHex = []
+    if(colorProfile == "gr"):
+        colsHex=['#00FF40','#00FF00','#40FF00','#80FF00','#BFFF00','#FFFF00','#FFBF00','#FF8000','#FF0000','#8000FF']
+    else:
+        if(colorProfile == "bg"):
+            colorMap = 'viridis'
+        elif(colorProfile == "by"):
+            colorMap = 'inferno'
+        else:
+            colorMap = 'viridis'                      # if error, default to colorblind
+        cmap = matplotlib.cm.get_cmap(colorMap)
+
+        for i in range(0,len(binLims)+1):               # generate a color for each bin
+            colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))))
+
     #Plot using gmplot:
     lonMin=min(MergeData['lon'])
     lonMax=max(MergeData['lon'])
@@ -175,28 +190,9 @@ def CreateMap(MergeData,id,MAP_DIR,addMarkers=True):
     lats=MergeData['lat'].values
     lons=MergeData['lon'].values
     concs=MergeData['conc'].values
-    gmap = gmplot.GoogleMapPlotter(np.mean([latMin,latMax]),np.mean([lonMin,lonMax]),zoom=16,apikey='AIzaSyCxHEzf7TNaVsha6owD_DgbZwzX16_cCcE')
-    circSize=7
-    for i in np.arange(0,len(lats)):
-        if concs[i] <= binLims[0]:
-            gmap.circle(lats[i],lons[i],radius=circSize,color=colsHex[0])
-        for j in np.arange(0,len(binLims)-1):
-            if concs[i] > binLims[j] and concs[i] <= binLims[j+1]:
-                gmap.circle(lats[i],lons[i],radius=circSize,color=colsHex[j+1])
-        if concs[i] > binLims[-1]:
-            gmap.circle(lats[i],lons[i],radius=circSize,color=colsHex[-1])
-    #Add start and end markers
-    if addMarkers:
-        gmap.marker(lats[0],lons[0],title="START",color="#008000")
-        gmap.marker(lats[-1],lons[-1],title="FINISH",color="#FF0000")
-        #Add N more markers at regular intervals
-        N=10
-        for i in np.arange(1,N+1):
-            j=int(len(lats)*(i/(N+1)))
-            gmap.marker(lats[j],lons[j],title=i,color="#D3D3D3")
-    #Write to file
-    HTMLfile = 'map_'+id+'.html'
-    gmap.draw(MAP_DIR+'/'+HTMLfile)
+    meanLat = np.mean([latMin,latMax])
+    meanLon = np.mean([lonMin,lonMax])
+
     #Output color bar:
     fig = plt.figure(figsize=(8, 1))
     axs = fig.add_axes([0.05, 0.55, 0.9, 0.2])
@@ -216,48 +212,13 @@ def CreateMap(MergeData,id,MAP_DIR,addMarkers=True):
                                     spacing='uniform',
                                     orientation='horizontal')
     cb.set_label('particles per cubic centimetre')
-    plt.savefig("static/colourbar.png", dpi=300, transparent=True)
-    return HTMLfile
+    plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
 
-def BuildMap(MAP_DIR,id,mapFileIn,mapTitle,subd=""):
-    #find/replace strings
-    find = [
-    '<title>Google Maps - pygmaps </title>',
-    'ROADMAP',
-    'padding:0px',
-    '<div id="map_canvas" style="width: 100%; height: 100%;"></div>']
-    replace = [
-    '<title>Map</title>\n\
-<style>\n\
-.center-div\n\
-{\n\
-  margin: 0 auto;\n\
-  width: 100px;\n\
-}\n\
-</style>',
-    'SATELLITE',
-    'padding:30px',
-    '<h1 style="text-align:center;">'+mapTitle+'</h1>\n\
-  <p style="text-align:center;"><img src="'+subd+'/static/colourbar.png" alt="colour bar" style="width:750px;"></p>\n\
-  <div id="map_canvas" style="width: 1000px; height: 600px;" class="center-div"></div>']
-    #open two files (one to read one to write)
-    inFile = open(MAP_DIR+'/'+mapFileIn,'r')
-    mapFileOut = 'map_'+id+'_mod.html'
-    outFile = open(MAP_DIR+'/'+mapFileOut,'w')
-    #Loop over lines in input file
-    for line in inFile:
-        #find/replace strings:
-        for i in np.arange(0,len(find)):
-            if find[i] in line:
-                line = line.replace(find[i],replace[i])
-        #contains/replace strings
-        if 'MarkerImage' in line:
-            splt=line.split('/')
-            hexCode=splt[-1][0:6]
-            line="    var img = new google.maps.MarkerImage('"+subd+"/static/"+hexCode+".png');\n"
-        #write line to output file
-        outFile.write(line)
-    #close the files
-    inFile.close()
-    outFile.close()
-    return mapFileOut
+    data = [lats.tolist(), lons.tolist(), concs.tolist(), meanLat, meanLon, binLims, colsHex]
+    return data
+
+def rgba_to_hex(rgba_color) :
+    red = int(rgba_color[0]*255)
+    green = int(rgba_color[1]*255)
+    blue = int(rgba_color[2]*255)
+    return '#{r:02x}{g:02x}{b:02x}'.format(r=red,g=green,b=blue)

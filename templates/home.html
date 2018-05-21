@@ -1,5 +1,16 @@
 {% extends 'layout.html' %}
 
+{% block styles %}
+    <style>
+       #map
+       {
+           height: 600px;
+           width: 80%;
+           margin: 3% auto
+       }
+    </style>
+{% endblock %}
+
 {% block body %}
   <div class="jumbotron text-center">
     <h1>Welcome to Living Lab for Air Quality: Data</h1>
@@ -11,7 +22,44 @@ a collaboration between operational and academic teams to build knowledge which 
 You can see the concentration map for the latest monitoring walk below and find the archive of all walks to date <a href={{subd}}/uploads >here</a>.
     <p>
   </div>
-  {% if latest %}
-    <iframe src={{subd}}/latest width="100%" height=1000px style="border:none;"></iframe>
-  {% endif %}
+    {% if data %}
+        <h1 style="text-align:center;">{{mapTitle}}</h1>
+        <p style="text-align:center;"><img src="{{ colorbarURL }}" alt="colour bar" style="width:750px;"></p>
+        <div id="map"></div>
+    {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{subd}}/static/scripts/maps.js"></script>
+
+    <script>
+    {#  jinja templates will ignore javascript conditionals and fill in variables first  #}
+    {% if data %}
+        var lats = {{ data[0]|tojson }};
+        var lons = {{ data[1]|tojson }};
+        var concs = {{ data[2]|tojson }};
+        var meanLat = {{ data[3] }};
+        var meanLng = {{ data[4] }};
+        var binLims = {{ data[5] }};
+        var colsHex = {{ data[6]|tojson }};
+
+        var map;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 16,
+                center: {lat: meanLat, lng: meanLng},
+                mapTypeId: 'hybrid'
+            })
+
+            addCPCData(lats, lons, concs, binLims, colsHex);
+        }
+    {% endif %}
+    </script>
+
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxHEzf7TNaVsha6owD_DgbZwzX16_cCcE&callback=initMap">
+    </script>
+
 {% endblock %}

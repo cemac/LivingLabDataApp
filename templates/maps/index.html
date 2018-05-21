@@ -18,8 +18,7 @@
 {% endblock %}
 
 {% block scripts %}
-    // TODO: Add query string for Cache busting
-    <script src="/static/scripts/maps.js"></script>
+    <script src="{{subd}}/static/scripts/maps.js"></script>
 
     <script>
         var map;
@@ -27,8 +26,6 @@
         var data = JSON.parse('{{ data | tojson | safe}}');
         var ids = {{ ids | tojson }};
         var meanLatLng = {{ meanLatLng | tojson }}
-        var meanLat = meanLatLng[0];
-        var meanLng = meanLatLng[1];
 
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {

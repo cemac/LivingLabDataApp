@@ -7,6 +7,5 @@ StravaTokens.txt
 __pycache__/
 deleted/
 static/colourbar*
-templates/maps/latest.html
 venv/
 .idea/

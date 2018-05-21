@@ -29,7 +29,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd=""
+subd="/living-lab"
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -81,23 +81,26 @@ def query_db(query, args=(), one=False):
 #Index
 @app.route('/')
 def index():
-    id = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1', one=True)['id']
-    start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?', (id,), one=True)['start_date']
-
-    # TODO Make code DRY
-    colorProfile = 'rb';
-    try:
-        with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
-            CPCtext = CPCFile.read()
-            CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-        GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(id) + '.pkl')
-        MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
-        data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile);
-    except Exception as e:
-        flash('Error generating map: ' + str(e), 'danger')
-        return redirect(subd + '/error')
-    colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
-    mapTitle = 'Concentration map for walk commencing ' + start_date
+    colorProfile = 'gr'
+    queryID = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+    mapTitle = ""
+    colorbarURL = ""
+    data = []
+    if queryID is not None:
+        try:
+            id = queryID['id']
+            start_date = queryID['start_date']
+            with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
+                CPCtext = CPCFile.read()
+                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
+            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(id) + '.pkl')
+            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
+            data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile)
+        except Exception as e:
+            flash('Error generating map: ' + str(e), 'danger')
+            return redirect(subd + '/error')
+        mapTitle = 'Concentration map for walk commencing ' + start_date
+        colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
 
     return render_template('home.html'
                            , subd=subd
@@ -341,31 +344,6 @@ def delete_CPCFile(id):
     if os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         os.rename(GPS_DIR+'/GPS_'+id+'.pkl',GPS_DEL_DIR+'/GPS_'+id+'.pkl')
 
-    #Delete and update latest map if this was it:
-    latestByDate = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1',one=True)
-    if latestByDate is not None:
-        latestDate = parse(latestByDate['start_date'])
-        latestID = latestByDate['id']
-        if delDate > latestDate:
-            if os.path.exists(MAP_DIR+'/latest.html'):
-                os.remove(MAP_DIR+'/latest.html')
-            try:
-                with open(CPC_DIR+'/CPC_'+str(latestID)+'.csv','r', encoding='utf-8') as CPCFile:
-                    CPCtext = CPCFile.read()
-                    CPCData,CPCdate,CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-                GPSData = pandas.read_pickle(GPS_DIR+'/GPS_'+str(latestID)+'.pkl')
-                MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
-                mapFileIn = GenerateCPCMap.CreateMap(MergeData,str(latestID),MAP_DIR)
-                mapTitle = 'Concentration map for walk commencing '+str(CPCdate)
-                mapFileOut = GenerateCPCMap.BuildMap(MAP_DIR,str(latestID),mapFileIn,mapTitle,subd=subd)
-                os.remove(MAP_DIR+'/'+mapFileIn)
-                os.rename(MAP_DIR+'/'+mapFileOut,MAP_DIR+'/latest.html')
-            except:
-                raise
-    else:
-        if os.path.exists(MAP_DIR+'/latest.html'):
-            os.remove(MAP_DIR+'/latest.html')
-
     flash('CPC file deleted', 'success')
     return redirect(subd+'/uploads')
 
@@ -384,4 +362,4 @@ def error():
     return render_template('error.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

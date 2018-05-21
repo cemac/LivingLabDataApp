@@ -33,13 +33,16 @@ You can see the concentration map for the latest monitoring walk below and find 
     <script src="/static/scripts/maps.js"></script>
 
     <script>
-        var lats    = {{ data[0]|tojson }};
-        var lons    = {{ data[1]|tojson }};
-        var concs   = {{ data[2]|tojson }};
-        var meanLat = {{ data[3] }};
-        var meanLng = {{ data[4] }};
-        var binLims = {{ data[5] }};
-        var colsHex = {{ data[6]|tojson }};
+        var data = JSON.parse('{{ data | tojson | safe}}');
+
+
+        var lats    = data[0];
+        var lons    = data[1];
+        var concs   = data[2];
+        var meanLat = data[3];
+        var meanLng = data[4];
+        var binLims = data[5];
+        var colsHex = data[6];
 
         var map;
 

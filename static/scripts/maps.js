@@ -1,29 +1,4 @@
-function addCPCData (lats, lons, concs, binLims, colsHex) {
-    var marker, iconStyle, iconColor;
 
-    for (var i = 0; i < concs.length; i++) {
-
-        var iconColor = getColor(concs[i], binLims, colsHex);
-
-        iconStyle = {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 6,
-            strokeWeight: 1,
-            strokeOpacity: 0.8,
-            strokeColor: iconColor,
-            fillOpacity: 0.5,
-            fillColor: iconColor
-        }
-
-        marker = new google.maps.Marker({
-            position: {lat: lats[i], lng: lons[i]},
-            icon: iconStyle,
-            clickable: false,
-            map: map
-        });
-
-    }
-}
 
 function addCPCLines (lats, lons, concs, binLims, colsHex) {
 

@@ -26,14 +26,14 @@
 
         var data = JSON.parse('{{ data | tojson | safe}}');
         var ids = {{ ids | tojson }};
-
-        console.log(data);
-        console.log(ids);
+        var meanLatLng = {{ meanLatLng | tojson }}
+        var meanLat = meanLatLng[0];
+        var meanLng = meanLatLng[1];
 
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
             zoom: 16,
-            center: {lat: 53.806, lng: -1.555},
+            center: new google.maps.LatLng(meanLatLng[0], meanLatLng[1]),
             mapTypeId: 'hybrid'
         });
 

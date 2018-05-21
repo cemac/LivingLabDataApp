@@ -99,7 +99,12 @@ def index():
     colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
     mapTitle = 'Concentration map for walk commencing ' + start_date
 
-    return render_template('home.html',subd=subd, mapTitle=mapTitle, colorbarURL=colorbarURL, data=data)
+    return render_template('home.html'
+                           , subd=subd
+                           , mapTitle=mapTitle
+                           , colorbarURL=colorbarURL
+                           , data=data
+                           )
 
 #Register form class
 class RegisterForm(Form):
@@ -282,6 +287,8 @@ def maps(id,mapType,colorProfile):
         abort(404)
     try:
         cpcCollection = {};
+        meanLats = []
+        meanLngs = []
         for idx in ids:
             with open(CPC_DIR + '/CPC_' + str(idx) + '.csv', 'r', encoding='utf-8') as CPCFile:
                 CPCtext = CPCFile.read()
@@ -289,11 +296,21 @@ def maps(id,mapType,colorProfile):
             GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(idx) + '.pkl')
             MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
             cpcCollection[idx] = GenerateCPCMap.CreateMap(MergeData, idx, MAP_DIR, colorProfile)
+            meanLats.append(cpcCollection[idx][3])
+            meanLngs.append(cpcCollection[idx][4])
+            meanLatLng = GenerateCPCMap.MultiMean(meanLats, meanLngs)
     except Exception as e:
         flash('Error generating map: ' + str(e), 'danger')
         return redirect(subd + '/error')
     colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
-    return render_template('maps/index.html', mapTitle=mapTitle, colorbarURL=colorbarURL, ids=ids, data=cpcCollection, markers=markers);
+    return render_template('maps/index.html'
+                           , mapTitle=mapTitle
+                           , colorbarURL=colorbarURL
+                           , ids=ids
+                           , meanLatLng=meanLatLng
+                           , data=cpcCollection
+                           , markers=markers
+                           )
 
 
 #Latest map

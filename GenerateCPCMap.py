@@ -212,7 +212,8 @@ def CreateMap(MergeData,id,MAP_DIR,colorProfile="gr"):
                                     spacing='uniform',
                                     orientation='horizontal')
     cb.set_label('particles per cubic centimetre')
-    plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
+    #Temporarily commenting out the next line until we sort out file-writing permissions on the server:
+    #plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
 
     data = [lats.tolist(), lons.tolist(), concs.tolist(), meanLat, meanLon, binLims, colsHex]
     return data

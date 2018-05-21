@@ -34,33 +34,3 @@ function addCPCData (lats, lons, concs, binLims, colsHex) {
 
     }
 }
-
-function addMarkers(lats, lons, subd="", N=10)
-{
-    var startMarker = new google.maps.Marker({
-        position: {lat: lats[0], lng: lons[0]},
-        title: "START",
-        icon: subd+'/static/008000.png',
-        map: map
-    })
-    var endMarker = new google.maps.Marker({
-        position: {lat: lats[lats.length-1], lng: lons[lons.length-1]},
-        title: "END",
-        icon: subd+"/static/FF0000.png",
-        map: map
-    })
-
-    var j;
-    for(var i = 1; i <= N+1; i++)
-    {
-        j = Math.floor(lats.length*i/(N+1));
-        console.log("i: " + i + " j: " + j)
-        console.log(lats[j] + ", " + lons[j])
-        new google.maps.Marker({
-            position: {lat: lats[j], lng: lons[j]},
-            title: i.toString(),
-            icon: subd+'/static/D3D3D3.png',
-            map: map
-        })
-    }
-}

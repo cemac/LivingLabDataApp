@@ -290,7 +290,6 @@ def maps(id,mapType,colorProfile):
             flash('Error generating map: '+str(e), 'danger')
             return redirect(subd+'/error')
         mapTitle = 'Concentration map for all walks on '+str(startYMD)
-        markers = 'false'
     elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
         try:
             with open(CPC_DIR+'/CPC_'+id+'.csv','r', encoding='utf-8') as CPCFile:
@@ -303,11 +302,10 @@ def maps(id,mapType,colorProfile):
             flash('Error generating map: '+str(e), 'danger')
             return redirect(subd+'/error')
         mapTitle = 'Concentration map for walk commencing '+start_date
-        markers = 'true'
     else:
         abort(404)
     colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
-    return render_template('maps/index.html', mapTitle=mapTitle, colorbarURL=colorbarURL, data=data, markers=markers)
+    return render_template('maps/index.html', subd=subd, mapTitle=mapTitle, colorbarURL=colorbarURL, data=data)
 
 #Delete CPC file
 @app.route('/delete_CPCFile/<string:id>', methods=['POST'])

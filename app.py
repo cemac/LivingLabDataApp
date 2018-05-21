@@ -281,11 +281,9 @@ def maps(id,mapType,colorProfile):
             if(date==startYMD):
                 ids.append(AllCPCFiles[i]['id'])
         mapTitle = 'Concentration map for all walks on '+str(startYMD)
-        markers = 'false';
     elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
         ids.append(id);
         mapTitle = 'Concentration map for walk commencing '+start_date
-        markers = 'true'
     else:
         abort(404)
     try:
@@ -307,12 +305,12 @@ def maps(id,mapType,colorProfile):
         return redirect(subd + '/error')
     colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
     return render_template('maps/index.html'
+                           , subd=subd
                            , mapTitle=mapTitle
                            , colorbarURL=colorbarURL
                            , ids=ids
                            , meanLatLng=meanLatLng
                            , data=cpcCollection
-                           , markers=markers
                            )
 
 

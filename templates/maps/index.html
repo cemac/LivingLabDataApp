@@ -41,15 +41,12 @@
             var binLims = data[id][5];
             var colsHex = data[id][6];
             addCPCLines(lats, lons, concs, binLims, colsHex);
-
-            if({{markers}})
-            {
-                addMarkers(lats, lons);
-            }
         });
       }
     </script>
+
     <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxHEzf7TNaVsha6owD_DgbZwzX16_cCcE&callback=initMap">
     </script>
+
 {% endblock %}

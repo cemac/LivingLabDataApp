@@ -102,7 +102,12 @@ def index():
         mapTitle = 'Concentration map for walk commencing ' + start_date
         colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
 
-    return render_template('home.html',subd=subd, mapTitle=mapTitle, colorbarURL=colorbarURL, data=data)
+    return render_template('home.html'
+                           , subd=subd
+                           , mapTitle=mapTitle
+                           , colorbarURL=colorbarURL
+                           , data=data
+                           )
 
 #Register form class
 class RegisterForm(Form):
@@ -270,44 +275,51 @@ def maps(id,mapType,colorProfile):
     YMD = []
     for date in allDates:
         YMD.append(dt.date(date.year,date.month,date.day))
+    ids = []
     if mapType == "multi" and YMD.count(startYMD) > 1:
-        ids=[]
         for i,date in enumerate(YMD):
             if(date==startYMD):
                 ids.append(AllCPCFiles[i]['id'])
-        MergeDataAll=[]
-        try:
-            for idx in ids:
-                with open(CPC_DIR+'/CPC_'+str(idx)+'.csv','r', encoding='utf-8') as CPCFile:
-                    CPCtext = CPCFile.read()
-                    CPCData,CPCdate,CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-                GPSData = pandas.read_pickle(GPS_DIR+'/GPS_'+str(idx)+'.pkl')
-                MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
-                MergeDataAll.append(MergeData)
-            MergeDataConcat = pandas.concat(MergeDataAll)
-            data = GenerateCPCMap.CreateMap(MergeDataConcat,id,MAP_DIR,colorProfile)
-        except Exception as e:
-            flash('Error generating map: '+str(e), 'danger')
-            return redirect(subd+'/error')
         mapTitle = 'Concentration map for all walks on '+str(startYMD)
-        markers = 'false'
+        markers = 'false';
     elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
-        try:
-            with open(CPC_DIR+'/CPC_'+id+'.csv','r', encoding='utf-8') as CPCFile:
-                CPCtext = CPCFile.read()
-                CPCData,CPCdate,CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-            GPSData = pandas.read_pickle(GPS_DIR+'/GPS_'+id+'.pkl')
-            MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
-            data = GenerateCPCMap.CreateMap(MergeData,id,MAP_DIR,colorProfile)
-        except Exception as e:
-            flash('Error generating map: '+str(e), 'danger')
-            return redirect(subd+'/error')
+        ids.append(id);
         mapTitle = 'Concentration map for walk commencing '+start_date
         markers = 'true'
     else:
         abort(404)
+    try:
+        cpcCollection = {};
+        meanLats = []
+        meanLngs = []
+        for idx in ids:
+            with open(CPC_DIR + '/CPC_' + str(idx) + '.csv', 'r', encoding='utf-8') as CPCFile:
+                CPCtext = CPCFile.read()
+                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
+            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(idx) + '.pkl')
+            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
+            cpcCollection[idx] = GenerateCPCMap.CreateMap(MergeData, idx, MAP_DIR, colorProfile)
+            meanLats.append(cpcCollection[idx][3])
+            meanLngs.append(cpcCollection[idx][4])
+            meanLatLng = GenerateCPCMap.MultiMean(meanLats, meanLngs)
+    except Exception as e:
+        flash('Error generating map: ' + str(e), 'danger')
+        return redirect(subd + '/error')
     colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
-    return render_template('maps/index.html', mapTitle=mapTitle, colorbarURL=colorbarURL, data=data, markers=markers)
+    return render_template('maps/index.html'
+                           , mapTitle=mapTitle
+                           , colorbarURL=colorbarURL
+                           , ids=ids
+                           , meanLatLng=meanLatLng
+                           , data=cpcCollection
+                           , markers=markers
+                           )
+
+
+#Latest map
+@app.route('/latest')
+def latest():
+    return render_template('maps/latest.html')
 
 #Delete CPC file
 @app.route('/delete_CPCFile/<string:id>', methods=['POST'])

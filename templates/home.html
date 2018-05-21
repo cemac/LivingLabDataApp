@@ -34,28 +34,30 @@ You can see the concentration map for the latest monitoring walk below and find 
     <script src="{{subd}}/static/scripts/maps.js"></script>
 
     <script>
-    {#  jinja templates will ignore javascript conditionals and fill in variables first  #}
-    {% if data %}
-        var lats = {{ data[0]|tojson }};
-        var lons = {{ data[1]|tojson }};
-        var concs = {{ data[2]|tojson }};
-        var meanLat = {{ data[3] }};
-        var meanLng = {{ data[4] }};
-        var binLims = {{ data[5] }};
-        var colsHex = {{ data[6]|tojson }};
+        {#  jinja templates will ignore javascript conditionals and fill in variables first  #}
+        {% if data %}
+            var data = JSON.parse('{{ data | tojson | safe}}');
 
-        var map;
+            var lats    = data[0];
+            var lons    = data[1];
+            var concs   = data[2];
+            var meanLat = data[3];
+            var meanLng = data[4];
+            var binLims = data[5];
+            var colsHex = data[6];
 
-        function initMap() {
-            map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 16,
-                center: {lat: meanLat, lng: meanLng},
-                mapTypeId: 'hybrid'
-            })
+            var map;
 
-            addCPCData(lats, lons, concs, binLims, colsHex);
-        }
-    {% endif %}
+            function initMap() {
+                map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 16,
+                    center: {lat: meanLat, lng: meanLng},
+                    mapTypeId: 'hybrid'
+                })
+
+            addCPCLines(lats, lons, concs, binLims, colsHex);
+            }
+        {% endif %}
     </script>
 
     <script async defer

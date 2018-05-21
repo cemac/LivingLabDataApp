@@ -21,28 +21,32 @@
     <script src="{{subd}}/static/scripts/maps.js"></script>
 
     <script>
-        var lats    = {{ data[0]|tojson }};
-        var lons    = {{ data[1]|tojson }};
-        var concs   = {{ data[2]|tojson }};
-        var meanLat = {{ data[3] }};
-        var meanLng = {{ data[4] }};
-        var binLims = {{ data[5] }};
-        var colsHex = {{ data[6]|tojson }};
-
         var map;
+
+        var data = JSON.parse('{{ data | tojson | safe}}');
+        var ids = {{ ids | tojson }};
+        var meanLatLng = {{ meanLatLng | tojson }}
 
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
             zoom: 16,
-            center: {lat: meanLat, lng: meanLng},
+            center: new google.maps.LatLng(meanLatLng[0], meanLatLng[1]),
             mapTypeId: 'hybrid'
         });
 
-        addCPCData(lats, lons, concs, binLims, colsHex);
-        if({{markers}})
-        {
-            addMarkers(lats, lons, {{ subd }});
-        }
+        ids.forEach(function(id){
+            var lats    = data[id][0];
+            var lons    = data[id][1];
+            var concs   = data[id][2];
+            var binLims = data[id][5];
+            var colsHex = data[id][6];
+            addCPCLines(lats, lons, concs, binLims, colsHex);
+
+            if({{markers}})
+            {
+                addMarkers(lats, lons);
+            }
+        });
       }
     </script>
     <script async defer

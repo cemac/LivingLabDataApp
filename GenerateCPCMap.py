@@ -222,3 +222,6 @@ def rgba_to_hex(rgba_color) :
     green = int(rgba_color[1]*255)
     blue = int(rgba_color[2]*255)
     return '#{r:02x}{g:02x}{b:02x}'.format(r=red,g=green,b=blue)
+
+def MultiMean(lats, lngs) :
+    return [np.mean(lats), np.mean(lngs)]

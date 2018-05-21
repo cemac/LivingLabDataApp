@@ -162,7 +162,7 @@ def NearestNghbr(CPCData,GPSData):
     return MergeData
 
 
-def CreateMap(MergeData,id,MAP_DIR,colorProfile="rb"):
+def CreateMap(MergeData,id,MAP_DIR,colorProfile="gr"):
     #conc data limits/colours:
     binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
 

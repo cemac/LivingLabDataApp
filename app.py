@@ -29,7 +29,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd="/living-lab"
+subd=""
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -82,20 +82,25 @@ def query_db(query, args=(), one=False):
 @app.route('/')
 def index():
     colorProfile = 'gr'
-    try:
-        id = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC LIMIT 1', one=True)['id']
-        start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?', (id,), one=True)['start_date']
-        with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
-            CPCtext = CPCFile.read()
-            CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-        GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(id) + '.pkl')
-        MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
-        data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile)
-    except Exception as e:
-        flash('Error generating map: ' + str(e), 'danger')
-        return redirect(subd + '/error')
-    colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
-    mapTitle = 'Concentration map for walk commencing ' + start_date
+    queryID = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+    mapTitle = ""
+    colorbarURL = ""
+    data = []
+    if queryID is not None:
+        try:
+            id = queryID['id']
+            start_date = queryID['start_date']
+            with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
+                CPCtext = CPCFile.read()
+                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
+            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(id) + '.pkl')
+            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
+            data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile)
+        except Exception as e:
+            flash('Error generating map: ' + str(e), 'danger')
+            return redirect(subd + '/error')
+        mapTitle = 'Concentration map for walk commencing ' + start_date
+        colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
 
     return render_template('home.html',subd=subd, mapTitle=mapTitle, colorbarURL=colorbarURL, data=data)
 

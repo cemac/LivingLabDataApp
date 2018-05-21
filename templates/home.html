@@ -22,10 +22,11 @@ a collaboration between operational and academic teams to build knowledge which 
 You can see the concentration map for the latest monitoring walk below and find the archive of all walks to date <a href={{subd}}/uploads >here</a>.
     <p>
   </div>
-
-    <h1 style="text-align:center;">{{mapTitle}}</h1>
-    <p style="text-align:center;"><img src="{{ colorbarURL   }}" alt="colour bar" style="width:750px;"></p>
-    <div id="map"></div>
+    {% if data %}
+        <h1 style="text-align:center;">{{mapTitle}}</h1>
+        <p style="text-align:center;"><img src="{{ colorbarURL }}" alt="colour bar" style="width:750px;"></p>
+        <div id="map"></div>
+    {% endif %}
 
 {% endblock %}
 
@@ -33,9 +34,11 @@ You can see the concentration map for the latest monitoring walk below and find 
     <script src="{{subd}}/static/scripts/maps.js"></script>
 
     <script>
-        var lats    = {{ data[0]|tojson }};
-        var lons    = {{ data[1]|tojson }};
-        var concs   = {{ data[2]|tojson }};
+    {#  jinja templates will ignore javascript conditionals and fill in variables first  #}
+    {% if data %}
+        var lats = {{ data[0]|tojson }};
+        var lons = {{ data[1]|tojson }};
+        var concs = {{ data[2]|tojson }};
         var meanLat = {{ data[3] }};
         var meanLng = {{ data[4] }};
         var binLims = {{ data[5] }};
@@ -50,8 +53,9 @@ You can see the concentration map for the latest monitoring walk below and find 
                 mapTypeId: 'hybrid'
             })
 
-            addCPCData(lats, lons, conc s, binLims, colsHex);
+            addCPCData(lats, lons, concs, binLims, colsHex);
         }
+    {% endif %}
     </script>
 
     <script async defer

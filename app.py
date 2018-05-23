@@ -314,12 +314,6 @@ def maps(id,mapType,colorProfile):
                            , data=json.dumps(data)
                            )
 
-
-#Latest map
-@app.route('/latest')
-def latest():
-    return render_template('maps/latest.html')
-
 #Delete CPC file
 @app.route('/delete_CPCFile/<string:id>', methods=['POST'])
 @is_logged_in

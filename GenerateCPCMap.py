@@ -16,7 +16,6 @@ import sys
 import pandas as pd
 import datetime as dt
 import numpy as np
-import argparse
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from stravalib.client import Client
@@ -161,25 +160,6 @@ def NearestNghbr(CPCData,GPSData):
     MergeData=MergeData.drop('dateTime',axis=1)
     return MergeData
 
-
-def CreateMap(MergeData,id,MAP_DIR,colorProfile="gr"):
-    #conc data limits/colours:
-    binLims = CreateBins()
-    colsHex = AssignColours(binLims, colorProfile)
-
-    lats=MergeData['lat'].values
-    lons=MergeData['lon'].values
-    concs=MergeData['conc'].values
-
-    meanLatLng = MeanLatLng(lats, lons)
-
-    meanLat = meanLatLng[0]
-    meanLon = meanLatLng[1]
-
-    CreateColourBar(binLims, colsHex, colorProfile)
-
-    data = [lats.tolist(), lons.tolist(), concs.tolist(), meanLat, meanLon, binLims, colsHex]
-    return data
 
 def rgba_to_hex(rgba_color) :
     red = int(rgba_color[0]*255)

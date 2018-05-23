@@ -83,29 +83,29 @@ def query_db(query, args=(), one=False):
 def index():
     colorProfile = 'gr'
     queryID = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
-    mapTitle = ""
-    colorbarURL = ""
+    settings = MapSettings(colorProfile)
     data = []
     if queryID is not None:
         try:
-            id = queryID['id']
-            start_date = queryID['start_date']
-            with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
-                CPCtext = CPCFile.read()
-                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(id) + '.pkl')
-            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
-            data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile)
+            mapClass = MapData(queryID['id'])
+            settings.addData(mapClass)
+            settings.getMeanLatLng()
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
-        mapTitle = 'Concentration map for walk commencing ' + start_date
-        colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
+
+        data.append(mapClass.lats.tolist())
+        data.append(mapClass.lons.tolist())
+        data.append(mapClass.concs.tolist())
+        data.append(settings.midpoint[0])
+        data.append(settings.midpoint[1])
+        data.append(settings.binLims)
+        data.append(settings.colsHex)
 
     return render_template('home.html'
                            , subd=subd
-                           , mapTitle=mapTitle
-                           , colorbarURL=colorbarURL
+                           , mapTitle=settings.mapTitle
+                           , colorbarURL=settings.colorbar
                            , data=data
                            )
 
@@ -365,32 +365,36 @@ class MapSettings:
         self.midpoint = []
         self.data = {}
 
+        self.setBinColor(colorProfile)
+
     def addData(self, mapData):
         self.data[mapData.startDate] = mapData
-        if len(dict) > 1:
+        if len(self.data) > 1:
             self.mapTitle = 'Concentration map for all walks on ' + mapData.parseYMD()
         else:
-            self.mapTitle = 'Concentration map for walk commencing ' + mapData.start_date
+            self.mapTitle = 'Concentration map for walk commencing ' + mapData.startDate
 
     def setBinColor(self, colorProfile):
         self.binLims = GenerateCPCMap.CreateBins()
-        self.colsHex = GenerateCPCMap.AssignColours()
+        self.colsHex = GenerateCPCMap.AssignColours(self.binLims, colorProfile)
         if not os.path.exists(self.colorbar):
-            GenerateCPCMap.CreateColourBar()
+            GenerateCPCMap.CreateColourBar(self.binLims, self.colsHex, colorProfile)
 
     def getMeanLatLng(self):
         meanLats = []
         meanLngs = []
-        for MapDatax in self.data:
-            meanLatLng = GenerateCPCMap.MeanLatLng(MapDatax.lats, MapDatax.lons)
+        for key in self.data:
+            meanLatLng = GenerateCPCMap.MeanLatLng(self.data[key].lats, self.data[key].lons)
             meanLats.append(meanLatLng[0])
             meanLngs.append(meanLatLng[1])
-        return GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
+        self.midpoint = GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
+
 
 class MapData:
+
     def __init__(self, id):
-        if id not in query_db('SELECT * FROM CPCFiles', one=False)['id']:
-            abort(404)
+        # if id not in query_db('SELECT * FROM CPCFiles', one=False)['id']:
+        #     abort(404)
 
         self.id = id
         self.lats = []
@@ -399,6 +403,8 @@ class MapData:
 
         self.dbquery = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)
         self.startDate = self.dbquery['start_date']
+
+        self.getData()
 
     def parseYMD(self):
         parseDate = parse(self.startDate)

@@ -29,7 +29,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd="/living-lab"
+subd=""
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -282,12 +282,12 @@ def maps(id,mapType,colorProfile):
                 ids.append(AllCPCFiles[i]['id'])
         mapTitle = 'Concentration map for all walks on '+str(startYMD)
     elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
-        ids.append(id);
+        ids.append(id)
         mapTitle = 'Concentration map for walk commencing '+start_date
     else:
         abort(404)
     try:
-        cpcCollection = {};
+        cpcCollection = {}
         meanLats = []
         meanLngs = []
         for idx in ids:
@@ -299,7 +299,7 @@ def maps(id,mapType,colorProfile):
             cpcCollection[idx] = GenerateCPCMap.CreateMap(MergeData, idx, MAP_DIR, colorProfile)
             meanLats.append(cpcCollection[idx][3])
             meanLngs.append(cpcCollection[idx][4])
-            meanLatLng = GenerateCPCMap.MultiMean(meanLats, meanLngs)
+            meanLatLng = GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
     except Exception as e:
         flash('Error generating map: ' + str(e), 'danger')
         return redirect(subd + '/error')
@@ -353,6 +353,71 @@ def download(id):
         return send_from_directory(CPC_DIR,'CPC_'+id+'.csv',as_attachment=True,attachment_filename=filename)
     else:
         abort(404)
+
+
+class MapSettings:
+
+    def __init__(self, colorProfile):
+        self.colorbar = subd + '/static/colourbar_' + colorProfile + '.png'
+        self.mapTitle = ""
+        self.binLims = []
+        self.colsHex = []
+        self.midpoint = []
+        self.data = {}
+
+    def addData(self, mapData):
+        self.data[mapData.startDate] = mapData
+        if len(dict) > 1:
+            self.mapTitle = 'Concentration map for all walks on ' + mapData.parseYMD()
+        else:
+            self.mapTitle = 'Concentration map for walk commencing ' + mapData.start_date
+
+    def setBinColor(self, colorProfile):
+        self.binLims = GenerateCPCMap.CreateBins()
+        self.colsHex = GenerateCPCMap.AssignColours()
+        if not os.path.exists(self.colorbar):
+            GenerateCPCMap.CreateColourBar()
+
+    def getMeanLatLng(self):
+        meanLats = []
+        meanLngs = []
+        for MapDatax in self.data:
+            meanLatLng = GenerateCPCMap.MeanLatLng(MapDatax.lats, MapDatax.lons)
+            meanLats.append(meanLatLng[0])
+            meanLngs.append(meanLatLng[1])
+        return GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
+
+class MapData:
+    def __init__(self, id):
+        if id not in query_db('SELECT * FROM CPCFiles', one=False)['id']:
+            abort(404)
+
+        self.id = id
+        self.lats = []
+        self.lons = []
+        self.concs = []
+
+        self.dbquery = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)
+        self.startDate = self.dbquery['start_date']
+
+    def parseYMD(self):
+        parseDate = parse(self.startDate)
+        return dt.date(parseDate.year, parseDate.month, parseDate.day)
+
+    def getData(self):
+        try:
+            with open(CPC_DIR + '/CPC_' + str(self.id) + '.csv', 'r', encoding='utf-8') as CPCFile:
+                CPCtext = CPCFile.read()
+                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
+            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(self.id) + '.pkl')
+            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
+            self.lats = MergeData['lat']
+            self.lons = MergeData['lon']
+            self.concs = MergeData['conc']
+        except Exception as e:
+            flash('Error generating map: ' + str(e), 'danger')
+            return redirect(subd + '/error')
+
 
 #Error
 @app.route('/error')

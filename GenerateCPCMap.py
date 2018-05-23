@@ -164,8 +164,44 @@ def NearestNghbr(CPCData,GPSData):
 
 def CreateMap(MergeData,id,MAP_DIR,colorProfile="gr"):
     #conc data limits/colours:
-    binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
+    binLims = CreateBins()
+    colsHex = AssignColours(binLims, colorProfile)
 
+    lats=MergeData['lat'].values
+    lons=MergeData['lon'].values
+    concs=MergeData['conc'].values
+
+    meanLatLng = MeanLatLng(lats, lons)
+
+    meanLat = meanLatLng[0]
+    meanLon = meanLatLng[1]
+
+    CreateColourBar(binLims, colsHex, colorProfile)
+
+    data = [lats.tolist(), lons.tolist(), concs.tolist(), meanLat, meanLon, binLims, colsHex]
+    return data
+
+def rgba_to_hex(rgba_color) :
+    red = int(rgba_color[0]*255)
+    green = int(rgba_color[1]*255)
+    blue = int(rgba_color[2]*255)
+    return '#{r:02x}{g:02x}{b:02x}'.format(r=red,g=green,b=blue)
+
+
+def ArrayMiddle(arr):
+    return np.mean([min(arr), max(arr)])
+
+
+def MeanLatLng(lats, lons):
+    return [ArrayMiddle(lats), ArrayMiddle(lons)]
+
+
+def CreateBins():
+    binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
+    return binLims
+
+
+def AssignColours(binLims, colorProfile):
     # List of Colormaps: https://matplotlib.org/users/colormaps.html
     colsHex = []
     if(colorProfile == "gr"):
@@ -182,18 +218,10 @@ def CreateMap(MergeData,id,MAP_DIR,colorProfile="gr"):
         for i in range(0,len(binLims)+1):               # generate a color for each bin
             colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))))
 
-    #Plot using gmplot:
-    lonMin=min(MergeData['lon'])
-    lonMax=max(MergeData['lon'])
-    latMin=min(MergeData['lat'])
-    latMax=max(MergeData['lat'])
-    lats=MergeData['lat'].values
-    lons=MergeData['lon'].values
-    concs=MergeData['conc'].values
-    meanLat = np.mean([latMin,latMax])
-    meanLon = np.mean([lonMin,lonMax])
+    return colsHex
 
-    #Output color bar:
+
+def CreateColourBar(binLims, colsHex, colorProfile):
     fig = plt.figure(figsize=(8, 1))
     axs = fig.add_axes([0.05, 0.55, 0.9, 0.2])
     cmap = mpl.colors.ListedColormap(colsHex[1:-1])
@@ -213,15 +241,3 @@ def CreateMap(MergeData,id,MAP_DIR,colorProfile="gr"):
                                     orientation='horizontal')
     cb.set_label('particles per cubic centimetre')
     plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
-
-    data = [lats.tolist(), lons.tolist(), concs.tolist(), meanLat, meanLon, binLims, colsHex]
-    return data
-
-def rgba_to_hex(rgba_color) :
-    red = int(rgba_color[0]*255)
-    green = int(rgba_color[1]*255)
-    blue = int(rgba_color[2]*255)
-    return '#{r:02x}{g:02x}{b:02x}'.format(r=red,g=green,b=blue)
-
-def MultiMean(lats, lngs) :
-    return [np.mean(lats), np.mean(lngs)]

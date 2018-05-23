@@ -9,6 +9,7 @@ import GenerateCPCMap
 import pandas
 from dateutil.parser import parse
 import datetime as dt
+import json
 
 app = Flask(__name__)
 assert os.path.exists('AppSecretKey.txt'), "Unable to locate app secret key"
@@ -266,51 +267,51 @@ def uploads():
 def maps(id,mapType,colorProfile):
     if not os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         abort(404)
-    start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)['start_date']
-    parseDate = parse(start_date)
-    startYMD = dt.date(parseDate.year,parseDate.month,parseDate.day)
+
+    settings = MapSettings(colorProfile)
+    mapClass = MapData(id)
+
+    settings.addData(mapClass)
+    startYMD = mapClass.parseYMD()
+
     AllCPCFiles = query_db('SELECT * FROM CPCFiles')
-    numCPCFiles = len(AllCPCFiles)
     allDates = [parse(x['start_date']) for x in AllCPCFiles]
+    ids = []
     YMD = []
     for date in allDates:
         YMD.append(dt.date(date.year,date.month,date.day))
-    ids = []
-    if mapType == "multi" and YMD.count(startYMD) > 1:
+
+    if mapType == "multi":
         for i,date in enumerate(YMD):
             if(date==startYMD):
                 ids.append(AllCPCFiles[i]['id'])
-        mapTitle = 'Concentration map for all walks on '+str(startYMD)
-    elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
-        ids.append(id)
-        mapTitle = 'Concentration map for walk commencing '+start_date
+                settings.addData(MapData(AllCPCFiles[i]['id']))
+    elif mapType == 'single':
+        ids.append(int(id))
+        settings.addData(MapData(ids[0]))
     else:
         abort(404)
-    try:
-        cpcCollection = {}
-        meanLats = []
-        meanLngs = []
-        for idx in ids:
-            with open(CPC_DIR + '/CPC_' + str(idx) + '.csv', 'r', encoding='utf-8') as CPCFile:
-                CPCtext = CPCFile.read()
-                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(idx) + '.pkl')
-            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
-            cpcCollection[idx] = GenerateCPCMap.CreateMap(MergeData, idx, MAP_DIR, colorProfile)
-            meanLats.append(cpcCollection[idx][3])
-            meanLngs.append(cpcCollection[idx][4])
-            meanLatLng = GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
-    except Exception as e:
-        flash('Error generating map: ' + str(e), 'danger')
-        return redirect(subd + '/error')
-    colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
+    settings.getMeanLatLng()
+    data = {}
+
+    for idx in ids:
+        data[idx] = [
+            settings.data[idx].lats.tolist()
+            , settings.data[idx].lons.tolist()
+            , settings.data[idx].concs.tolist()
+            , settings.midpoint[0]
+            , settings.midpoint[1]
+            , settings.binLims
+            , settings.colsHex
+        ]
+
     return render_template('maps/index.html'
                            , subd=subd
-                           , mapTitle=mapTitle
-                           , colorbarURL=colorbarURL
+                           , mapTitle=settings.mapTitle
+                           , colorbarURL=settings.colorbar
                            , ids=ids
-                           , meanLatLng=meanLatLng
-                           , data=cpcCollection
+                           , meanLatLng=settings.midpoint
+                           , data=json.dumps(data)
                            )
 
 
@@ -368,9 +369,9 @@ class MapSettings:
         self.setBinColor(colorProfile)
 
     def addData(self, mapData):
-        self.data[mapData.startDate] = mapData
+        self.data[mapData.id] = mapData
         if len(self.data) > 1:
-            self.mapTitle = 'Concentration map for all walks on ' + mapData.parseYMD()
+            self.mapTitle = 'Concentration map for all walks on ' + str(mapData.parseYMD())
         else:
             self.mapTitle = 'Concentration map for walk commencing ' + mapData.startDate
 

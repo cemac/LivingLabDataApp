@@ -22,8 +22,7 @@
 
     <script>
         var map;
-
-        var data = JSON.parse('{{ data | tojson | safe}}');
+        var data = JSON.parse('{{ data | safe }}');
         var ids = {{ ids | tojson }};
         var meanLatLng = {{ meanLatLng | tojson }}
 
@@ -35,6 +34,7 @@
         });
 
         ids.forEach(function(id){
+            console.log(data)
             var lats    = data[id][0];
             var lons    = data[id][1];
             var concs   = data[id][2];

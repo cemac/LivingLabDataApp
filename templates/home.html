@@ -22,7 +22,7 @@ a collaboration between operational and academic teams to build knowledge which 
 You can see the concentration map for the latest monitoring walk below and find the archive of all walks to date <a href={{subd}}/uploads >here</a>.
     <p>
   </div>
-    {% if data %}
+    {% if settings != false %}
         <h1 style="text-align:center;">{{mapTitle}}</h1>
         <p style="text-align:center;"><img src="{{ colorbarURL }}" alt="colour bar" style="width:750px;"></p>
         <div id="map"></div>
@@ -35,27 +35,22 @@ You can see the concentration map for the latest monitoring walk below and find 
 
     <script>
         {#  jinja templates will ignore javascript conditionals and fill in variables first  #}
-        {% if data %}
-            var data = JSON.parse('{{ data | tojson | safe}}');
-
-            var lats    = data[0];
-            var lons    = data[1];
-            var concs   = data[2];
-            var meanLat = data[3];
-            var meanLng = data[4];
-            var binLims = data[5];
-            var colsHex = data[6];
-
+        {% if settings != false %}
+            var settings = JSON.parse('{{ settings | safe}}');
             var map;
 
             function initMap() {
                 map = new google.maps.Map(document.getElementById('map'), {
                     zoom: 16,
-                    center: {lat: meanLat, lng: meanLng},
+                    center: {lat: settings['midpoint'][0], lng: settings['midpoint'][1]},
                     mapTypeId: 'hybrid'
                 })
 
-            addCPCLines(lats, lons, concs, binLims, colsHex);
+                for (var id in settings.data)
+                {
+                    var MapData = settings.data[id];
+                    addCPCLines(MapData.lats, MapData.lons, MapData.concs, settings.binLims, settings.colsHex);
+                }
             }
         {% endif %}
     </script>

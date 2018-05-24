@@ -83,32 +83,21 @@ def query_db(query, args=(), one=False):
 @app.route('/')
 def index():
     colorProfile = 'gr'
-    queryID = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
-    settings = MapSettings(colorProfile)
-    data = []
-    if queryID is not None:
+    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+
+    if latest is not None:
         try:
-            mapClass = MapData(queryID['id'])
+            settings = MapSettings(colorProfile)
+            mapClass = MapData(latest['id'])
             settings.addData(mapClass)
             settings.getMeanLatLng()
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
+        return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
+    else:
+        return render_template('home.html', subd=subd, settings=False)
 
-        data.append(mapClass.lats.tolist())
-        data.append(mapClass.lons.tolist())
-        data.append(mapClass.concs.tolist())
-        data.append(settings.midpoint[0])
-        data.append(settings.midpoint[1])
-        data.append(settings.binLims)
-        data.append(settings.colsHex)
-
-    return render_template('home.html'
-                           , subd=subd
-                           , mapTitle=settings.mapTitle
-                           , colorbarURL=settings.colorbar
-                           , data=data
-                           )
 
 #Register form class
 class RegisterForm(Form):
@@ -349,7 +338,6 @@ def download(id):
     else:
         abort(404)
 
-
 class MapSettings:
 
     def __init__(self, colorProfile):
@@ -383,6 +371,16 @@ class MapSettings:
             meanLats.append(meanLatLng[0])
             meanLngs.append(meanLatLng[1])
         self.midpoint = GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
+
+    def toJSON(self):
+        return dict(
+            colorbar=self.colorbar
+            , mapTitle=self.mapTitle
+            , binLims=self.binLims
+            , colsHex=self.colsHex
+            , midpoint=self.midpoint
+            , data=self.data
+        )
 
 
 class MapData:
@@ -418,6 +416,23 @@ class MapData:
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
+
+    def toJSON(self):
+        return dict(
+            id=self.id
+            , lats=self.lats.tolist()
+            , lons=self.lons.tolist()
+            , concs=self.concs.tolist()
+            , startDate=self.startDate
+        )
+
+
+class ComplexEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'toJSON'):
+            return obj.toJSON()
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 
 #Error

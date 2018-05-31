@@ -6,7 +6,7 @@ function addCPCData (lats, lons, concs, binLims, colsHex) {
             iconColor = colsHex[i];
         }
         else if (concs[i] > binLims[binLims.length - 1]) {
-            iconColor = colsHex[binLims.length - 1];
+            iconColor = colsHex[colsHex.length - 1];
         }
         else {
             for (var j = 0; j < binLims.length - 1; j++) {

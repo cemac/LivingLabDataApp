@@ -65,3 +65,13 @@ function getColor(conc, binLims, colsHex)
         }
     }
 }
+
+function dataToLines(data, binLims, colsHex)
+{
+    for (var id in data)
+    {
+        var MapData = data[id];
+        addCPCLines(MapData.lats, MapData.lons, MapData.concs, binLims, colsHex);
+    }
+
+}

@@ -110,6 +110,7 @@ class RegisterForm(Form):
     ])
     confirm = PasswordField('Confirm Password')
 
+
 #User register
 @app.route('/register-a-new-user', methods=['GET', 'POST'])
 def register():
@@ -146,6 +147,7 @@ def register():
         return redirect(subd+'/login')
     return render_template('register.html', form=form, subd=subd)
 
+
 #User login
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -177,6 +179,7 @@ def login():
 
     return render_template('login.html', subd=subd)
 
+
 #Check if user is logged in
 def is_logged_in(f):
     @wraps(f)
@@ -188,6 +191,7 @@ def is_logged_in(f):
             return redirect(subd+'/login')
     return wrap
 
+
 #Logout
 @app.route('/logout')
 @is_logged_in
@@ -195,6 +199,7 @@ def logout():
     session.clear()
     flash('You are now logged out', 'success')
     return redirect(subd+'/login')
+
 
 #Uploads
 @app.route('/uploads', methods=["GET","POST"])
@@ -251,6 +256,7 @@ def uploads():
     else:
         return render_template('uploads.html',LoggedIn=('logged_in' in session),subd=subd)
 
+
 #Maps
 @app.route('/maps/<string:id>/<string:mapType>/<string:colorProfile>')
 def maps(id,mapType,colorProfile):
@@ -260,48 +266,21 @@ def maps(id,mapType,colorProfile):
     settings = MapSettings(colorProfile)
     mapClass = MapData(id)
 
-    settings.addData(mapClass)
-    startYMD = mapClass.parseYMD()
-
-    AllCPCFiles = query_db('SELECT * FROM CPCFiles')
-    allDates = [parse(x['start_date']) for x in AllCPCFiles]
-    ids = []
-    YMD = []
-    for date in allDates:
-        YMD.append(dt.date(date.year,date.month,date.day))
-
     if mapType == "multi":
-        for i,date in enumerate(YMD):
-            if(date==startYMD):
-                ids.append(AllCPCFiles[i]['id'])
-                settings.addData(MapData(AllCPCFiles[i]['id']))
+        startYMD = mapClass.parseYMD()
+        results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD)+'%',))
+
+        for result in results:
+            settings.addData(MapData(result['id']))
     elif mapType == 'single':
-        ids.append(int(id))
-        settings.addData(MapData(ids[0]))
+        settings.addData(mapClass)
     else:
         abort(404)
+
     settings.getMeanLatLng()
-    data = {}
 
-    for idx in ids:
-        data[idx] = [
-            settings.data[idx].lats.tolist()
-            , settings.data[idx].lons.tolist()
-            , settings.data[idx].concs.tolist()
-            , settings.midpoint[0]
-            , settings.midpoint[1]
-            , settings.binLims
-            , settings.colsHex
-        ]
+    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
 
-    return render_template('maps/index.html'
-                           , subd=subd
-                           , mapTitle=settings.mapTitle
-                           , colorbarURL=settings.colorbar
-                           , ids=ids
-                           , meanLatLng=settings.midpoint
-                           , data=json.dumps(data)
-                           )
 
 #Delete CPC file
 @app.route('/delete_CPCFile/<string:id>', methods=['POST'])
@@ -329,6 +308,7 @@ def delete_CPCFile(id):
     flash('CPC file deleted', 'success')
     return redirect(subd+'/uploads')
 
+
 #Download CPC file
 @app.route('/download/<string:id>', methods=['POST'])
 def download(id):
@@ -337,6 +317,7 @@ def download(id):
         return send_from_directory(CPC_DIR,'CPC_'+id+'.csv',as_attachment=True,attachment_filename=filename)
     else:
         abort(404)
+
 
 class MapSettings:
 
@@ -396,7 +377,6 @@ class MapData:
 
         self.dbquery = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)
         self.startDate = self.dbquery['start_date']
-
         self.getData()
 
     def parseYMD(self):

@@ -367,8 +367,8 @@ class MapSettings:
 class MapData:
 
     def __init__(self, id):
-        # if id not in query_db('SELECT * FROM CPCFiles', one=False)['id']:
-        #     abort(404)
+        if id not in query_db('SELECT * FROM CPCFiles', one=False)['id']:
+            abort(404)
 
         self.id = id
         self.lats = []

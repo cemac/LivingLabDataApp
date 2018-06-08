@@ -30,7 +30,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd="/living-lab"
+subd=""
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -339,7 +339,7 @@ class MapSettings:
             self.mapTitle = 'Concentration map for walk commencing ' + mapData.startDate
 
     def setBinColor(self, colorProfile):
-        self.binLims = GenerateCPCMap.CreateBins()
+        self.binLims = GenerateCPCMap.CreateBins(subd+"static/BinLimits.csv")
         self.colsHex = GenerateCPCMap.AssignColours(self.binLims, colorProfile)
         if not os.path.exists(self.colorbar):
             GenerateCPCMap.CreateColourBar(self.binLims, self.colsHex, colorProfile)
@@ -367,8 +367,8 @@ class MapSettings:
 class MapData:
 
     def __init__(self, id):
-        if id not in query_db('SELECT * FROM CPCFiles', one=False)['id']:
-            abort(404)
+        # if id not in query_db('SELECT * FROM CPCFiles', one=False)['id']:
+        #     abort(404)
 
         self.id = id
         self.lats = []

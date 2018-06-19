@@ -9,6 +9,7 @@ import GenerateCPCMap
 import pandas
 from dateutil.parser import parse
 import datetime as dt
+import json
 
 app = Flask(__name__)
 assert os.path.exists('AppSecretKey.txt'), "Unable to locate app secret key"
@@ -82,32 +83,21 @@ def query_db(query, args=(), one=False):
 @app.route('/')
 def index():
     colorProfile = 'gr'
-    queryID = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
-    mapTitle = ""
-    colorbarURL = ""
-    data = []
-    if queryID is not None:
+    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+
+    if latest is not None:
         try:
-            id = queryID['id']
-            start_date = queryID['start_date']
-            with open(CPC_DIR + '/CPC_' + str(id) + '.csv', 'r', encoding='utf-8') as CPCFile:
-                CPCtext = CPCFile.read()
-                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(id) + '.pkl')
-            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
-            data = GenerateCPCMap.CreateMap(MergeData, id, MAP_DIR, colorProfile)
+            settings = MapSettings(colorProfile)
+            mapClass = MapData(latest['id'])
+            settings.addData(mapClass)
+            settings.getMeanLatLng()
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
-        mapTitle = 'Concentration map for walk commencing ' + start_date
-        colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
+        return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
+    else:
+        return render_template('home.html', subd=subd, settings=False)
 
-    return render_template('home.html'
-                           , subd=subd
-                           , mapTitle=mapTitle
-                           , colorbarURL=colorbarURL
-                           , data=data
-                           )
 
 #Register form class
 class RegisterForm(Form):
@@ -119,6 +109,7 @@ class RegisterForm(Form):
         validators.EqualTo('confirm', message='Passwords do no match')
     ])
     confirm = PasswordField('Confirm Password')
+
 
 #User register
 @app.route('/register-a-new-user', methods=['GET', 'POST'])
@@ -156,6 +147,7 @@ def register():
         return redirect(subd+'/login')
     return render_template('register.html', form=form, subd=subd)
 
+
 #User login
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -187,6 +179,7 @@ def login():
 
     return render_template('login.html', subd=subd)
 
+
 #Check if user is logged in
 def is_logged_in(f):
     @wraps(f)
@@ -198,6 +191,7 @@ def is_logged_in(f):
             return redirect(subd+'/login')
     return wrap
 
+
 #Logout
 @app.route('/logout')
 @is_logged_in
@@ -205,6 +199,7 @@ def logout():
     session.clear()
     flash('You are now logged out', 'success')
     return redirect(subd+'/login')
+
 
 #Uploads
 @app.route('/uploads', methods=["GET","POST"])
@@ -224,7 +219,7 @@ def uploads():
         #Else upload file (unless bad extension)
         if file and allowed_file(file.filename):
             try:
-                CPCtext=file.read().decode("utf-8")
+                CPCtext=file.read().decode("iso8859_15")
                 CPCData,CPCdate,CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
                 GPSData = GenerateCPCMap.FetchGPSData('StravaTokens.txt',CPCdate,CPClen)
                 MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
@@ -242,7 +237,7 @@ def uploads():
             cur.close()
             #Save CPC file, renaming based on DB ID
             lastID = query_db('SELECT * FROM CPCFiles ORDER BY id DESC LIMIT 1',one=True)['id']
-            CPCFile = open(CPC_DIR+'/CPC_'+str(lastID)+'.csv','w', encoding='utf-8')
+            CPCFile = open(CPC_DIR+'/CPC_'+str(lastID)+'.csv','w', encoding='iso8859_15')
             CPCFile.write(CPCtext)
             CPCFile.close()
             #save GPS dataframe
@@ -261,57 +256,30 @@ def uploads():
     else:
         return render_template('uploads.html',LoggedIn=('logged_in' in session),subd=subd)
 
+
 #Maps
 @app.route('/maps/<string:id>/<string:mapType>/<string:colorProfile>')
 def maps(id,mapType,colorProfile):
     if not os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         abort(404)
-    start_date = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)['start_date']
-    parseDate = parse(start_date)
-    startYMD = dt.date(parseDate.year,parseDate.month,parseDate.day)
-    AllCPCFiles = query_db('SELECT * FROM CPCFiles')
-    numCPCFiles = len(AllCPCFiles)
-    allDates = [parse(x['start_date']) for x in AllCPCFiles]
-    YMD = []
-    for date in allDates:
-        YMD.append(dt.date(date.year,date.month,date.day))
-    ids = []
-    if mapType == "multi" and YMD.count(startYMD) > 1:
-        for i,date in enumerate(YMD):
-            if(date==startYMD):
-                ids.append(AllCPCFiles[i]['id'])
-        mapTitle = 'Concentration map for all walks on '+str(startYMD)
-    elif mapType == "single" or (mapType == "multi" and YMD.count(startYMD) == 1):
-        ids.append(id);
-        mapTitle = 'Concentration map for walk commencing '+start_date
+
+    settings = MapSettings(colorProfile)
+    mapClass = MapData(id)
+
+    if mapType == "multi":
+        startYMD = mapClass.parseYMD()
+        results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD)+'%',))
+
+        for result in results:
+            settings.addData(MapData(result['id']))
+    elif mapType == 'single':
+        settings.addData(mapClass)
     else:
         abort(404)
-    try:
-        cpcCollection = {};
-        meanLats = []
-        meanLngs = []
-        for idx in ids:
-            with open(CPC_DIR + '/CPC_' + str(idx) + '.csv', 'r', encoding='utf-8') as CPCFile:
-                CPCtext = CPCFile.read()
-                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
-            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(idx) + '.pkl')
-            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
-            cpcCollection[idx] = GenerateCPCMap.CreateMap(MergeData, idx, MAP_DIR, colorProfile)
-            meanLats.append(cpcCollection[idx][3])
-            meanLngs.append(cpcCollection[idx][4])
-        meanLatLng = GenerateCPCMap.MultiMean(meanLats, meanLngs)
-    except Exception as e:
-        flash('Error generating map: ' + str(e), 'danger')
-        return redirect(subd + '/error')
-    colorbarURL = subd + '/static/colourbar_' + colorProfile + '.png'
-    return render_template('maps/index.html'
-                           , subd=subd
-                           , mapTitle=mapTitle
-                           , colorbarURL=colorbarURL
-                           , ids=ids
-                           , meanLatLng=meanLatLng
-                           , data=cpcCollection
-                           )
+
+    settings.getMeanLatLng()
+
+    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
 
 
 #Delete CPC file
@@ -340,6 +308,7 @@ def delete_CPCFile(id):
     flash('CPC file deleted', 'success')
     return redirect(subd+'/uploads')
 
+
 #Download CPC file
 @app.route('/download/<string:id>', methods=['POST'])
 def download(id):
@@ -348,6 +317,103 @@ def download(id):
         return send_from_directory(CPC_DIR,'CPC_'+id+'.csv',as_attachment=True,attachment_filename=filename)
     else:
         abort(404)
+
+
+class MapSettings:
+
+    def __init__(self, colorProfile):
+        self.colorbar = subd + '/static/colourbar_' + colorProfile + '.png'
+        self.mapTitle = ""
+        self.binLims = []
+        self.colsHex = []
+        self.midpoint = []
+        self.data = {}
+
+        self.setBinColor(colorProfile)
+
+    def addData(self, mapData):
+        self.data[mapData.id] = mapData
+        if len(self.data) > 1:
+            self.mapTitle = 'Concentration map for all walks on ' + str(mapData.parseYMD())
+        else:
+            self.mapTitle = 'Concentration map for walk commencing ' + mapData.startDate
+
+    def setBinColor(self, colorProfile):
+        self.binLims = GenerateCPCMap.CreateBins()
+        self.colsHex = GenerateCPCMap.AssignColours(self.binLims, colorProfile)
+        if not os.path.exists(self.colorbar):
+            GenerateCPCMap.CreateColourBar(self.binLims, self.colsHex, colorProfile)
+
+    def getMeanLatLng(self):
+        meanLats = []
+        meanLngs = []
+        for key in self.data:
+            meanLatLng = GenerateCPCMap.MeanLatLng(self.data[key].lats, self.data[key].lons)
+            meanLats.append(meanLatLng[0])
+            meanLngs.append(meanLatLng[1])
+        self.midpoint = GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
+
+    def toJSON(self):
+        return dict(
+            colorbar=self.colorbar
+            , mapTitle=self.mapTitle
+            , binLims=self.binLims
+            , colsHex=self.colsHex
+            , midpoint=self.midpoint
+            , data=self.data
+        )
+
+
+class MapData:
+
+    def __init__(self, id):
+        # if id not in query_db('SELECT * FROM CPCFiles', one=False)['id']:
+        #     abort(404)
+
+        self.id = id
+        self.lats = []
+        self.lons = []
+        self.concs = []
+
+        self.dbquery = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)
+        self.startDate = self.dbquery['start_date']
+        self.getData()
+
+    def parseYMD(self):
+        parseDate = parse(self.startDate)
+        return dt.date(parseDate.year, parseDate.month, parseDate.day)
+
+    def getData(self):
+        try:
+            with open(CPC_DIR + '/CPC_' + str(self.id) + '.csv', 'r', encoding='iso8859_15') as CPCFile:
+                CPCtext = CPCFile.read()
+                CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
+            GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(self.id) + '.pkl')
+            MergeData = GenerateCPCMap.NearestNghbr(CPCData, GPSData)
+            self.lats = MergeData['lat']
+            self.lons = MergeData['lon']
+            self.concs = MergeData['conc']
+        except Exception as e:
+            flash('Error generating map: ' + str(e), 'danger')
+            return redirect(subd + '/error')
+
+    def toJSON(self):
+        return dict(
+            id=self.id
+            , lats=self.lats.tolist()
+            , lons=self.lons.tolist()
+            , concs=self.concs.tolist()
+            , startDate=self.startDate
+        )
+
+
+class ComplexEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'toJSON'):
+            return obj.toJSON()
+        else:
+            return json.JSONEncoder.default(self, obj)
+
 
 #Error
 @app.route('/error')

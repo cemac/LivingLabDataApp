@@ -1,3 +1,5 @@
+
+
 function addCPCLines (lats, lons, concs, binLims, colsHex) {
 
     for (var i = 0; i < lats.length-1; i++)
@@ -62,4 +64,14 @@ function getColor(conc, binLims, colsHex)
             }
         }
     }
+}
+
+function dataToLines(data, binLims, colsHex)
+{
+    for (var id in data)
+    {
+        var MapData = data[id];
+        addCPCLines(MapData.lats, MapData.lons, MapData.concs, binLims, colsHex);
+    }
+
 }

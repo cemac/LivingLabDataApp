@@ -13,7 +13,7 @@
 
 {% block body %}
     <h1 style="text-align:center;">{{mapTitle}}</h1>
-    <p style="text-align:center;"><img src="{{ colorbarURL   }}" alt="colour bar" style="width:750px;"></p>
+    <p style="text-align:center;"><img id="colourbar" src="" alt="colourbar" style="width:750px;"></p>
     <div id="map"></div>
 {% endblock %}
 
@@ -22,31 +22,24 @@
 
     <script>
         var map;
+        var settings = JSON.parse('{{ settings | safe }}');
 
-        var data = JSON.parse('{{ data | tojson | safe}}');
-        var ids = {{ ids | tojson }};
-        var meanLatLng = {{ meanLatLng | tojson }}
+        $('#colourbar').attr("src", settings['colorbar']);
 
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 16,
-            center: new google.maps.LatLng(meanLatLng[0], meanLatLng[1]),
-            mapTypeId: 'hybrid'
-        });
+                zoom: 16,
+                center: {lat: settings.midpoint[0], lng: settings.midpoint[1]},
+                mapTypeId: 'hybrid'
+            });
 
-        ids.forEach(function(id){
-            var lats    = data[id][0];
-            var lons    = data[id][1];
-            var concs   = data[id][2];
-            var binLims = data[id][5];
-            var colsHex = data[id][6];
-            addCPCLines(lats, lons, concs, binLims, colsHex);
-        });
-      }
+            dataToLines(settings.data, settings.binLims, settings.colsHex)
+
+        }
     </script>
 
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxHEzf7TNaVsha6owD_DgbZwzX16_cCcE&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxHEzf7TNaVsha6owD_DgbZwzX16_cCcE&callback=initMap">
     </script>
 
 {% endblock %}

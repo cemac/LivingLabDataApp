@@ -55,7 +55,7 @@ function getColor(conc, binLims, colsHex)
         return colsHex[0];
     }
     else if (conc > binLims[binLims.length - 1]) {
-        return colsHex[binLims.length - 1];
+        return colsHex[colsHex.length - 1];
     }
     else {
         for (var j = 0; j < binLims.length - 1; j++) {

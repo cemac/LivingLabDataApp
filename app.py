@@ -219,7 +219,7 @@ def uploads():
         #Else upload file (unless bad extension)
         if file and allowed_file(file.filename):
             try:
-                CPCtext=file.read().decode("utf-8")
+                CPCtext=file.read().decode("iso8859_15")
                 CPCData,CPCdate,CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
                 GPSData = GenerateCPCMap.FetchGPSData('StravaTokens.txt',CPCdate,CPClen)
                 MergeData = GenerateCPCMap.NearestNghbr(CPCData,GPSData)
@@ -237,7 +237,7 @@ def uploads():
             cur.close()
             #Save CPC file, renaming based on DB ID
             lastID = query_db('SELECT * FROM CPCFiles ORDER BY id DESC LIMIT 1',one=True)['id']
-            CPCFile = open(CPC_DIR+'/CPC_'+str(lastID)+'.csv','w', encoding='utf-8')
+            CPCFile = open(CPC_DIR+'/CPC_'+str(lastID)+'.csv','w', encoding='iso8859_15')
             CPCFile.write(CPCtext)
             CPCFile.close()
             #save GPS dataframe
@@ -385,7 +385,7 @@ class MapData:
 
     def getData(self):
         try:
-            with open(CPC_DIR + '/CPC_' + str(self.id) + '.csv', 'r', encoding='utf-8') as CPCFile:
+            with open(CPC_DIR + '/CPC_' + str(self.id) + '.csv', 'r', encoding='iso8859_15') as CPCFile:
                 CPCtext = CPCFile.read()
                 CPCData, CPCdate, CPClen = GenerateCPCMap.ReadCPCFile(CPCtext)
             GPSData = pandas.read_pickle(GPS_DIR + '/GPS_' + str(self.id) + '.pkl')

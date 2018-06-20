@@ -34,7 +34,7 @@ def ReadCPCFile(CPCtext):
             iStartTime=i
         if l[0:13] == "Sample Length":
             iSampleLen=i
-        if "Time,Concentration" in l:
+        if "Time" in l and "Concentration" in l:
             iHeader=i
     assert iStartDate >= 0, "Start date not found in CPC file header"
     assert iStartTime >= 0, "Start time not found in CPC file header"
@@ -67,7 +67,7 @@ def ReadCPCFile(CPCtext):
     startLine=iHeader+1
     for i in range(len(lines)-2,len(lines)-10,-1):
         temp=lines[i].split(',')
-        if(temp[0]==''):
+        if(temp[0]=='' or 'Comment for Sample 1'):
             continue
         else:
             break

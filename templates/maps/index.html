@@ -33,7 +33,15 @@
                 mapTypeId: 'hybrid'
             });
 
+            // set extent to fit all data
+            var southwest = new google.maps.LatLng(settings['minpoint'][0], settings['minpoint'][1])
+            var northeast = new google.maps.LatLng(settings['maxpoint'][0], settings['maxpoint'][1])
+            var llb = new google.maps.LatLngBounds(southwest, northeast)
+            map.fitBounds(llb)
+
             dataToLines(settings.data, settings.binLims, settings.colsHex)
+            console.log(settings.data);
+
 
         }
     </script>

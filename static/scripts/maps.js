@@ -8,7 +8,7 @@ function addCPCLines (lats, lons, concs, binLims, colsHex) {
         // without the closure, there is only one content and position
         ( function() {
 
-                   // get average concentration between the points
+           // get average concentration between the points
             var meanConc = Math.ceil((concs[i] + concs[i+1])/2);
             var midPoint = [
                 (lats[i] + lats[i+1]) / 2,
@@ -73,5 +73,6 @@ function dataToLines(data, binLims, colsHex)
         var MapData = data[id];
         addCPCLines(MapData.lats, MapData.lons, MapData.concs, binLims, colsHex);
     }
-
 }
+
+function getBounds(data)

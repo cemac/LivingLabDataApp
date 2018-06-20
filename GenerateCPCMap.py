@@ -185,7 +185,30 @@ def AssignColours(binLims, colorProfile):
     # List of Colormaps: https://matplotlib.org/users/colormaps.html
     colsHex = []
     if(colorProfile == "gr"):
-        colsHex=['#00FF40','#00FF00','#40FF00','#80FF00','#BFFF00','#FFFF00','#FFBF00','#FF8000','#FF0000','#8000FF']
+        rgmap = {'red': ((0.0, 0.0, 0.0),
+                          (0.2, 0.0, 0.0),
+                          (0.3, 0.3, 0.3),
+                          (0.4, 0.8, 0.8),
+                          (0.5, 1.0, 1.0),
+                          (0.9, 1.0, 1.0),
+                          (1.0, 0.5, 0.5)
+                         ),
+
+                  'green': ((0.0, 1.0, 1.0),
+                            (0.5, 1.0, 1.0),
+                            (0.6, 0.7, 0.7),
+                            (0.7, 0.5, 0.5),
+                            (1.0, 0.0, 0.0),
+                            ),
+
+                  'blue': ((0.0, 0.3, 0.3),
+                           (0.1, 0.0, 0.0),
+                           (0.9, 0.0, 0.0),
+                           (1.0, 1.0, 1.0),
+                           )
+                  }
+
+        cmap = mpl.colors.LinearSegmentedColormap('RedGreen', rgmap)
     else:
         if(colorProfile == "bg"):
             colorMap = 'viridis'
@@ -195,8 +218,8 @@ def AssignColours(binLims, colorProfile):
             colorMap = 'viridis'                      # if error, default to colorblind
         cmap = matplotlib.cm.get_cmap(colorMap)
 
-        for i in range(0,len(binLims)+1):               # generate a color for each bin
-            colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))))
+    for i in range(0,len(binLims)+1):               # generate a color for each bin
+        colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))))
 
     return colsHex
 

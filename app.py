@@ -30,7 +30,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd=""
+subd="/living-lab"
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -90,6 +90,10 @@ def index():
             settings = MapSettings(colorProfile)
             mapClass = MapData(latest['id'])
             settings.addData(mapClass)
+            startYMD = mapClass.parseYMD()
+            results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
+            for result in results:
+                settings.addData(MapData(result['id']))
             settings.getMeanLatLng()
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')

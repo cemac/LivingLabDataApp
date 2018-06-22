@@ -231,3 +231,4 @@ def ReadGeoJSON(path):
         hexagons = []
         for feature in data['features']:
             hexagons.append(shape(feature['geometry']))
+        return hexagons

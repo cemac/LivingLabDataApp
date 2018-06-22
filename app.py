@@ -101,7 +101,27 @@ def index():
 #average
 @app.route('/average')
 def average():
-    GenerateCPCMap.ReadGeoJSON('static/hex.geojson')
+    colorProfile = 'gr'
+    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+
+    if latest is not None:
+        try:
+            settings = MapSettings(colorProfile)
+            mapClass = MapData(latest['id'])
+            settings.addData(mapClass)
+            settings.getMeanLatLng()
+            grid = Grid()
+        except Exception as e:
+            flash('Error generating map: ' + str(e), 'danger')
+            return redirect(subd + '/error')
+
+        return render_template('average.html', subd=subd
+                                , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
+                                , grid=json.dumps(grid.toJSON(), cls=ComplexEncoder)
+                               )
+    else:
+        return render_template('average.html', subd=subd, settings=False)
+
 
 #Register form class
 class RegisterForm(Form):
@@ -411,16 +431,35 @@ class MapData:
         )
 
 
-class Hexagon:
+class Grid:
 
     def __init__(self):
-        self.lats = []
-        self.lons = []
+        self.cells = []
+
+        shpHexagons = GenerateCPCMap.ReadGeoJSON('static/hex.geojson')
+        for shpHexagon in shpHexagons:
+            hexagon = Hexagon(shpHexagon)
+            self.cells.append(hexagon)
 
     def toJSON(self):
         return dict(
-            lats=self.lats.tolist()
-            , lons=self.lons.tolist()
+            cells=self.cells
+        )
+
+class Hexagon:
+
+    def __init__(self, hexagon):
+        self.lats = []
+        self.lons = []
+        for lat in hexagon.boundary.xy[0]:
+            self.lats.append(lat)
+        for lons in hexagon.boundary.xy[1]:
+            self.lons.append(lons)
+
+    def toJSON(self):
+        return dict(
+            lats=self.lats
+            , lons=self.lons
         )
 
 

@@ -18,6 +18,9 @@ import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import shapely as shp
+from shapely.geometry import shape
+import json
 from stravalib.client import Client
 
 def ReadCPCFile(CPCtext):
@@ -221,3 +224,10 @@ def CreateColourBar(binLims, colsHex, colorProfile):
                                     orientation='horizontal')
     cb.set_label('particles per cubic centimetre')
     plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
+
+def ReadGeoJSON(path):
+    with open(path) as hexFile:
+        data = json.load(hexFile)
+        hexagons = []
+        for feature in data['features']:
+            hexagons.append(shape(feature['geometry']))

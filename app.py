@@ -98,6 +98,10 @@ def index():
     else:
         return render_template('home.html', subd=subd, settings=False)
 
+#average
+@app.route('/average')
+def average():
+    GenerateCPCMap.ReadGeoJSON('static/hex.geojson')
 
 #Register form class
 class RegisterForm(Form):
@@ -404,6 +408,19 @@ class MapData:
             , lons=self.lons.tolist()
             , concs=self.concs.tolist()
             , startDate=self.startDate
+        )
+
+
+class Hexagon:
+
+    def __init__(self):
+        self.lats = []
+        self.lons = []
+
+    def toJSON(self):
+        return dict(
+            lats=self.lats.tolist()
+            , lons=self.lons.tolist()
         )
 
 

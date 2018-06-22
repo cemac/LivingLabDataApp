@@ -109,8 +109,12 @@ def average():
             settings = MapSettings(colorProfile)
             mapClass = MapData(latest['id'])
             settings.addData(mapClass)
+            startYMD = mapClass.parseYMD()
+            results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
+            for result in results:
+                settings.addData(MapData(result['id']))
             settings.getMeanLatLng()
-            grid = Grid()
+            grid = Grid(settings.data)
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
@@ -433,13 +437,26 @@ class MapData:
 
 class Grid:
 
-    def __init__(self):
+    def __init__(self, data):
         self.cells = []
 
         shpHexagons = GenerateCPCMap.ReadGeoJSON('static/hex.geojson')
         for shpHexagon in shpHexagons:
             hexagon = Hexagon(shpHexagon)
             self.cells.append(hexagon)
+
+        for dataset in data:
+
+            for i, conc in enumerate(data[dataset].concs):
+                for cell in self.cells:
+                    if GenerateCPCMap.Overlaps(cell.hexagon, [data[dataset].lons[i], data[dataset].lats[i]]):
+                        cell.concs.append(conc)
+                        print(i)
+                        break
+
+        for cell in self.cells:
+            cell.average()
+
 
     def toJSON(self):
         return dict(
@@ -449,17 +466,25 @@ class Grid:
 class Hexagon:
 
     def __init__(self, hexagon):
+        self.hexagon = hexagon
         self.lats = []
         self.lons = []
+        self.concs = []
+        self.concMedian = 0
         for lat in hexagon.boundary.xy[0]:
             self.lats.append(lat)
         for lons in hexagon.boundary.xy[1]:
             self.lons.append(lons)
 
+    def average(self):
+        if self.concs:
+            self.concMedian = GenerateCPCMap.Median(self.concs)
+
     def toJSON(self):
         return dict(
             lats=self.lats
-            , lons=self.lons
+            ,lons=self.lons
+            ,conc=self.concMedian
         )
 
 

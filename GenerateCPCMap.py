@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import shapely as shp
 from shapely.geometry import shape
+from shapely.geometry import Point
 import json
 from stravalib.client import Client
 
@@ -178,6 +179,9 @@ def ArrayMiddle(arr):
 def MeanLatLng(lats, lons):
     return [ArrayMiddle(lats), ArrayMiddle(lons)]
 
+def Median(arr):
+    return np.median(arr)
+
 
 def CreateBins():
     binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
@@ -225,6 +229,7 @@ def CreateColourBar(binLims, colsHex, colorProfile):
     cb.set_label('particles per cubic centimetre')
     plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
 
+
 def ReadGeoJSON(path):
     with open(path) as hexFile:
         data = json.load(hexFile)
@@ -232,3 +237,7 @@ def ReadGeoJSON(path):
         for feature in data['features']:
             hexagons.append(shape(feature['geometry']))
         return hexagons
+
+
+def Overlaps(polygon, latlng):
+    return polygon.contains(Point(latlng[0], latlng[1]))

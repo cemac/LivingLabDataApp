@@ -50,17 +50,11 @@ You can see the concentration map for the latest monitoring walk below and find 
                     mapTypeId: 'hybrid'
                 })
 
-                for (var id in settings.data)
-                {
-                    var MapData = settings.data[id];
-                    addCPCLines(MapData.lats, MapData.lons, MapData.concs, settings.binLims, settings.colsHex);
-                }
-
-                console.log(grid.cells)
-
                 for (var id in grid.cells)
                 {
                     var cell = grid.cells[id]
+
+                    if(cell.conc == 0){ continue; }
 
                     // Define the LatLng coordinates for the polygon.
                     var cellCoords = []
@@ -69,14 +63,15 @@ You can see the concentration map for the latest monitoring walk below and find 
                         cellCoords.push({lat: cell.lons[i], lng: cell.lats[i]})
                     }
 
+                    var color = getColor(cell.conc, settings.binLims, settings.colsHex)
 
                     // Construct the polygon.
                     var cellPolygon = new google.maps.Polygon({
                       paths: cellCoords,
-                      strokeColor: '#FF0000',
+                      strokeColor: color,
                       strokeOpacity: 0.8,
                       strokeWeight: 3,
-                      fillColor: '#FF0000',
+                      fillColor: color,
                       fillOpacity: 0.35,
                       map: map
                     });

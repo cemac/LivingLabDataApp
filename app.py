@@ -456,15 +456,17 @@ class Grid:
 class Hexagon:
 
     def __init__(self, hexagon):
-        self.hexagon = hexagon
         self.lats = []
         self.lons = []
         self.concs = []
+        self.hexagon = hexagon
+        self.centroid = []
         self.concMedian = 0
         for lat in hexagon.boundary.xy[0]:
             self.lats.append(lat)
         for lons in hexagon.boundary.xy[1]:
             self.lons.append(lons)
+        self.centroid = [hexagon.centroid.x, hexagon.centroid.y]
 
     def average(self):
         if self.concs:
@@ -475,6 +477,7 @@ class Hexagon:
             lats=self.lats
             ,lons=self.lons
             ,conc=self.concMedian
+            ,centroid=self.centroid
         )
 
 

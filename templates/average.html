@@ -38,7 +38,6 @@ You can see the concentration map for the latest monitoring walk below and find 
         {% if settings != false %}
             var settings = JSON.parse('{{ settings | safe}}');
             var grid = JSON.parse('{{ grid | safe }}');
-            console.log(grid)
             var map;
 
             function initMap() {
@@ -48,34 +47,9 @@ You can see the concentration map for the latest monitoring walk below and find 
                     zoom: 16,
                     center: {lat: settings['midpoint'][0], lng: settings['midpoint'][1]},
                     mapTypeId: 'hybrid'
-                })
+                });
 
-                for (var id in grid.cells)
-                {
-                    var cell = grid.cells[id]
-
-                    if(cell.conc == 0){ continue; }
-
-                    // Define the LatLng coordinates for the polygon.
-                    var cellCoords = []
-                    for (var i=0;i < cell.lats.length; i++)
-                    {
-                        cellCoords.push({lat: cell.lons[i], lng: cell.lats[i]})
-                    }
-
-                    var color = getColor(cell.conc, settings.binLims, settings.colsHex)
-
-                    // Construct the polygon.
-                    var cellPolygon = new google.maps.Polygon({
-                      paths: cellCoords,
-                      strokeColor: color,
-                      strokeOpacity: 0.8,
-                      strokeWeight: 1,
-                      fillColor: color,
-                      fillOpacity: 0.35,
-                      map: map
-                    });
-                }
+                addGrid(grid, settings.binLims, settings.colsHex)
             }
         {% endif %}
     </script>

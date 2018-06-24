@@ -176,8 +176,9 @@ def MeanLatLng(lats, lons):
     return [ArrayMiddle(lats), ArrayMiddle(lons)]
 
 
-def CreateBins():
-    binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
+def CreateBins(file):
+    #binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
+    binLims = np.loadtxt(file, delimiter=',', dtype='int', encoding='utf-8', skiprows=1)
     return binLims
 
 

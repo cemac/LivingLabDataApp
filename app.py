@@ -339,7 +339,7 @@ class MapSettings:
             self.mapTitle = 'Concentration map for walk commencing ' + mapData.startDate
 
     def setBinColor(self, colorProfile):
-        self.binLims = GenerateCPCMap.CreateBins()
+        self.binLims = GenerateCPCMap.CreateBins("static/BinLimits.csv").tolist()
         self.colsHex = GenerateCPCMap.AssignColours(self.binLims, colorProfile)
         if not os.path.exists(self.colorbar):
             GenerateCPCMap.CreateColourBar(self.binLims, self.colsHex, colorProfile)

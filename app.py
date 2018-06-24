@@ -6,6 +6,7 @@ from functools import wraps
 from werkzeug.utils import secure_filename
 import os
 import GenerateCPCMap
+import SpatialAnalysis
 import pandas
 from dateutil.parser import parse
 import datetime as dt
@@ -436,13 +437,13 @@ class Grid:
     def __init__(self, data):
         self.cells = []
 
-        shpHexagons = GenerateCPCMap.ReadGeoJSON('static/hex.geojson')
+        shpHexagons = SpatialAnalysis.ReadGeoJSON('static/hex.geojson')
         for shpHexagon in shpHexagons:
             hexagon = Hexagon(shpHexagon)
             self.cells.append(hexagon)
 
         for dataset in data:
-            self.cells = GenerateCPCMap.SpatialJoin(data[dataset], self.cells)
+            self.cells = SpatialAnalysis.SpatialJoin(data[dataset], self.cells)
 
         for cell in self.cells:
             cell.average()

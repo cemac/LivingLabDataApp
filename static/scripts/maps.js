@@ -79,7 +79,7 @@ function addGrid(grid, binLims, colsHex) {
                     map: map
                 });
 
-                var content = cell.conc.ceil().toString();
+                var content = Math.ceil(cell.conc).toString();
                 var position = {lat: cell.centroid[1], lng: cell.centroid[0]};
                 var clickFunction = function (content, position) {
                     var infoWindow = new google.maps.InfoWindow({

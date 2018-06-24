@@ -434,7 +434,6 @@ class MapData:
             , startDate=self.startDate
         )
 
-
 class Grid:
 
     def __init__(self, data):
@@ -446,13 +445,16 @@ class Grid:
             self.cells.append(hexagon)
 
         for dataset in data:
+            self.cells = GenerateCPCMap.SpatialJoin(data[dataset], self.cells)
 
-            for i, conc in enumerate(data[dataset].concs):
-                for cell in self.cells:
-                    if GenerateCPCMap.Overlaps(cell.hexagon, [data[dataset].lons[i], data[dataset].lats[i]]):
-                        cell.concs.append(conc)
-                        print(i)
-                        break
+        # for dataset in data:
+        #     GenerateCPCMap.SpatialJoin(dataset, self.cells)
+        #     for i, conc in enumerate(data[dataset].concs):
+        #         for cell in self.cells:
+        #             if GenerateCPCMap.Overlaps(cell.hexagon, [data[dataset].lons[i], data[dataset].lats[i]]):
+        #                 cell.concs.append(conc)
+        #                 print(i)
+        #                 break
 
         for cell in self.cells:
             cell.average()

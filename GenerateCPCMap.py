@@ -22,6 +22,7 @@ import shapely as shp
 from shapely.geometry import shape
 from shapely.geometry import Point
 import json
+from rtree import index
 from stravalib.client import Client
 
 def ReadCPCFile(CPCtext):
@@ -238,6 +239,21 @@ def ReadGeoJSON(path):
             hexagons.append(shape(feature['geometry']))
         return hexagons
 
+def SpatialJoin(points, polygons):
+    idx = index.Index()
+    count = -1
+
+    for poly in polygons:
+        count += 1
+        idx.insert(count, poly.hexagon.bounds)
+
+    for i, conc in enumerate(points.concs):
+        for j in idx.intersection((points.lons[i], points.lats[i])):
+            if Point(points.lons[i], points.lats[i]).within(polygons[j].hexagon):
+                polygons[j].concs.append(conc)
+                break
+
+    return polygons
 
 def Overlaps(polygon, latlng):
     return polygon.contains(Point(latlng[0], latlng[1]))

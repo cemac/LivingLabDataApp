@@ -75,7 +75,7 @@ function addGrid(grid, binLims, colsHex) {
                     strokeOpacity: 0.8,
                     strokeWeight: 1,
                     fillColor: color,
-                    fillOpacity: 0.35,
+                    fillOpacity: 0.45,
                     map: map
                 });
 

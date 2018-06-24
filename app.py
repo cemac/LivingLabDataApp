@@ -107,10 +107,7 @@ def average():
     if latest is not None:
         try:
             settings = MapSettings(colorProfile)
-            mapClass = MapData(latest['id'])
-            settings.addData(mapClass)
-            startYMD = mapClass.parseYMD()
-            results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
+            results = query_db('SELECT * FROM CPCFiles')
             for result in results:
                 settings.addData(MapData(result['id']))
             settings.getMeanLatLng()
@@ -446,15 +443,6 @@ class Grid:
 
         for dataset in data:
             self.cells = GenerateCPCMap.SpatialJoin(data[dataset], self.cells)
-
-        # for dataset in data:
-        #     GenerateCPCMap.SpatialJoin(dataset, self.cells)
-        #     for i, conc in enumerate(data[dataset].concs):
-        #         for cell in self.cells:
-        #             if GenerateCPCMap.Overlaps(cell.hexagon, [data[dataset].lons[i], data[dataset].lats[i]]):
-        #                 cell.concs.append(conc)
-        #                 print(i)
-        #                 break
 
         for cell in self.cells:
             cell.average()

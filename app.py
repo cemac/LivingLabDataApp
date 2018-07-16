@@ -112,7 +112,7 @@ def average():
             for result in results:
                 settings.addData(MapData(result['id']))
             settings.getMeanLatLng()
-            grid = Grid(settings.data)
+            grid = Grid(settings.data, 'hex.geojson')
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
@@ -434,13 +434,13 @@ class MapData:
 
 class Grid:
 
-    def __init__(self, data):
+    def __init__(self, data, csv):
         self.cells = []
 
-        shpHexagons = SpatialAnalysis.ReadGeoJSON('static/hex.geojson')
-        for shpHexagon in shpHexagons:
-            hexagon = Hexagon(shpHexagon)
-            self.cells.append(hexagon)
+        shpCells = SpatialAnalysis.ReadGeoJSON('static/'+csv)
+        for shpCell in shpCells:
+            cell = Cell(shpCell)
+            self.cells.append(cell)
 
         for dataset in data:
             self.cells = SpatialAnalysis.SpatialJoin(data[dataset], self.cells)
@@ -454,20 +454,20 @@ class Grid:
             cells=self.cells
         )
 
-class Hexagon:
+class Cell:
 
-    def __init__(self, hexagon):
+    def __init__(self, polygon):
         self.lats = []
         self.lons = []
         self.concs = []
-        self.hexagon = hexagon
+        self.polygon = polygon
         self.centroid = []
         self.concMedian = 0
-        for lat in hexagon.boundary.xy[0]:
+        for lat in polygon.boundary.xy[0]:
             self.lats.append(lat)
-        for lons in hexagon.boundary.xy[1]:
+        for lons in polygon.boundary.xy[1]:
             self.lons.append(lons)
-        self.centroid = [hexagon.centroid.x, hexagon.centroid.y]
+        self.centroid = [polygon.centroid.x, polygon.centroid.y]
 
     def average(self):
         if self.concs:

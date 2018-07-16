@@ -18,10 +18,10 @@ from rtree import index
 def ReadGeoJSON(path):
     with open(path) as hexFile:
         data = json.load(hexFile)
-        hexagons = []
+        cells = []
         for feature in data['features']:
-            hexagons.append(shape(feature['geometry']))
-        return hexagons
+            cells.append(shape(feature['geometry']))
+        return cells
 
 
 def SpatialJoin(points, polygons):
@@ -30,11 +30,11 @@ def SpatialJoin(points, polygons):
 
     for poly in polygons:
         count += 1
-        idx.insert(count, poly.hexagon.bounds)
+        idx.insert(count, poly.polygon.bounds)
 
     for i, conc in enumerate(points.concs):
         for j in idx.intersection((points.lons[i], points.lats[i])):
-            if Point(points.lons[i], points.lats[i]).within(polygons[j].hexagon):
+            if Point(points.lons[i], points.lats[i]).within(polygons[j].polygon):
                 polygons[j].concs.append(conc)
                 break
 

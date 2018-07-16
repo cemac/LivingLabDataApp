@@ -10,6 +10,8 @@ import pandas
 from dateutil.parser import parse
 import datetime as dt
 import json
+import requests
+from io import StringIO
 
 app = Flask(__name__)
 assert os.path.exists('AppSecretKey.txt'), "Unable to locate app secret key"
@@ -317,6 +319,14 @@ def download(id):
         return send_from_directory(CPC_DIR,'CPC_'+id+'.csv',as_attachment=True,attachment_filename=filename)
     else:
         abort(404)
+
+@app.route('/weather')
+def weather():
+    url = 'https://sci.ncas.ac.uk/leedsweather/Archive/CUSTOM-ARC-2018-06-25.csv'
+    data = StringIO(requests.get(url).content.decode('utf-8'))
+    pdData = pandas.read_csv(data)
+    return pdData.to_json()
+
 
 
 class MapSettings:

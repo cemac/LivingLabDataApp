@@ -123,7 +123,7 @@ def FetchGPSData(tokensFile,CPCdate,CPClen):
         for activity in myActivities:
             startDate=activity.start_date_local
             #print('    '+activity.name+':',startDate,'Local time')
-            if abs((CPCdate-startDate).total_seconds()) < 300:
+            if abs((CPCdate-startDate).total_seconds()) < 60:
                 validActs.update({i:activity.id})
     assert len(validActs) > 0, "No GPS activities with a start time within 5 minutes of the CPC data file start time"
     DeltaT=1e10
@@ -142,7 +142,7 @@ def FetchGPSData(tokensFile,CPCdate,CPClen):
     startDate=activity.start_date_local
     endDate=startDate+dt.timedelta(seconds=activity.elapsed_time.seconds)
     endDateCPC=CPCdate+dt.timedelta(seconds=CPClen)
-    assert abs((endDateCPC-endDate).total_seconds()) < 300, "No valid GPS activities with an end time within 5 minutes of the CPC data file end time"
+    assert abs((endDateCPC-endDate).total_seconds()) < 60, "No valid GPS activities with an end time within 1 minute of the CPC data file end time"
     myTypes = ['time', 'latlng']
     myStream = client.get_activity_streams(chosenAct,types=myTypes)
     latlon=myStream['latlng'].data

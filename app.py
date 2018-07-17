@@ -325,19 +325,6 @@ def download(id):
         abort(404)
 
 
-
-@app.route('/weather/<string:id>')
-def weather(id):
-    mapClass = MapData(id)
-    datetime = parse(mapClass.startDate)
-    hourlyWeather = Weather.fetchWeatherData(datetime)
-    test = hourlyWeather.iloc[[datetime.hour]]
-    return redirect(subd+'/uploads')
-
-
-
-
-
 class MapSettings:
 
     def __init__(self, colorProfile):

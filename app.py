@@ -6,6 +6,7 @@ from functools import wraps
 from werkzeug.utils import secure_filename
 import os
 import GenerateCPCMap
+import Weather
 import pandas
 from dateutil.parser import parse
 import datetime as dt
@@ -89,12 +90,17 @@ def index():
         try:
             settings = MapSettings(colorProfile)
             mapClass = MapData(latest['id'])
+
             settings.addData(mapClass)
             settings.getMeanLatLng()
+
+            datetime = parse(mapClass.startDate)
+            hourlyWeather = Weather.fetchWeatherData(datetime)
+            weatherdata = hourlyWeather.iloc[[datetime.hour]]
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
-        return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
+        return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=weatherdata.to_json())
     else:
         return render_template('home.html', subd=subd, settings=False)
 
@@ -317,6 +323,19 @@ def download(id):
         return send_from_directory(CPC_DIR,'CPC_'+id+'.csv',as_attachment=True,attachment_filename=filename)
     else:
         abort(404)
+
+
+
+@app.route('/weather/<string:id>')
+def weather(id):
+    mapClass = MapData(id)
+    datetime = parse(mapClass.startDate)
+    hourlyWeather = Weather.fetchWeatherData(datetime)
+    test = hourlyWeather.iloc[[datetime.hour]]
+    return redirect(subd+'/uploads')
+
+
+
 
 
 class MapSettings:

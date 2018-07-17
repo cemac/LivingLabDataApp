@@ -15,6 +15,11 @@
     <h1 style="text-align:center;">{{mapTitle}}</h1>
     <p style="text-align:center;"><img id="colourbar" src="" alt="colourbar" style="width:750px;"></p>
     <div id="map"></div>
+
+    {% if weather != false %}
+        {% include 'includes/_weathertable.html' %}
+    {% endif %}
+
 {% endblock %}
 
 {% block scripts %}
@@ -36,6 +41,17 @@
             dataToLines(settings.data, settings.binLims, settings.colsHex)
 
         }
+
+        {% if weather != False %}
+            var weather = JSON.parse('{{ weather | safe }}');
+            $.each(weather, function(i, val){
+                $.each(val, function(j, val2){
+                    var row = '<tr> <td>'+ i +' </td> <td>' + val2 + '</td></tr>'
+                    $('#weather-table').append(row)
+                })
+            })
+        {% endif %}
+
     </script>
 
     <script async defer

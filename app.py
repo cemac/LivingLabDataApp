@@ -97,6 +97,7 @@ def index():
             datetime = parse(mapClass.startDate)
             hourlyWeather = Weather.fetchWeatherData(datetime)
             weatherdata = hourlyWeather.iloc[[datetime.hour]]
+
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
@@ -283,9 +284,13 @@ def maps(id,mapType,colorProfile):
     else:
         abort(404)
 
+    datetime = parse(mapClass.startDate)
+    hourlyWeather = Weather.fetchWeatherData(datetime)
+    weatherdata = hourlyWeather.iloc[[datetime.hour]]
+
     settings.getMeanLatLng()
 
-    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
+    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=weatherdata.to_json())
 
 
 #Delete CPC file

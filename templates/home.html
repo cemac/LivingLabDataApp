@@ -61,10 +61,8 @@ You can see the concentration map for the latest monitoring walk below and find 
         {% endif %}
         {% if weather != False %}
             var weather = JSON.parse('{{ weather | safe }}');
-            console.log(weather)
             $.each(weather, function(i, val){
                 $.each(val, function(j, val2){
-                    console.log(i + ": " + val2)
                     var row = '<tr> <td>'+ i +' </td> <td>' + val2 + '</td></tr>'
                     $('#weather-table').append(row)
                 })

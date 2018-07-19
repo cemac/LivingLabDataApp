@@ -123,5 +123,4 @@ function dataToLines(data, binLims, colsHex)
         var MapData = data[id];
         addCPCLines(MapData.lats, MapData.lons, MapData.concs, binLims, colsHex);
     }
-
 }

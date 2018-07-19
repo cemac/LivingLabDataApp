@@ -30,7 +30,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd=""
+subd="/living-lab"
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -357,7 +357,7 @@ class MapSettings:
             maxpoints.append(arrstats['max'])
         self.midpoint = GenerateCPCMap.elementMean(midpoints)
         self.extent.append(GenerateCPCMap.elementMin(minpoints))
-        self.extent.append(GenerateCPCMap.elementMin(maxpoints))
+        self.extent.append(GenerateCPCMap.elementMax(maxpoints))
 
     def toJSON(self):
         return dict(

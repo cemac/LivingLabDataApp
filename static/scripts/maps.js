@@ -74,5 +74,3 @@ function dataToLines(data, binLims, colsHex)
         addCPCLines(MapData.lats, MapData.lons, MapData.concs, binLims, colsHex);
     }
 }
-
-function getBounds(data)

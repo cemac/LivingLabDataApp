@@ -320,6 +320,14 @@ def download(id):
     else:
         abort(404)
 
+@app.route('/weather')
+def weather():
+    url = 'https://sci.ncas.ac.uk/leedsweather/Archive/CUSTOM-ARC-2018-06-25.csv'
+    data = StringIO(requests.get(url).content.decode('utf-8'))
+    pdData = pandas.read_csv(data)
+    return pdData.to_json()
+
+
 
 class MapSettings:
 

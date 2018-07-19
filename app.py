@@ -32,7 +32,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd=""
+subd="/living-lab"
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -319,14 +319,6 @@ def download(id):
         return send_from_directory(CPC_DIR,'CPC_'+id+'.csv',as_attachment=True,attachment_filename=filename)
     else:
         abort(404)
-
-@app.route('/weather')
-def weather():
-    url = 'https://sci.ncas.ac.uk/leedsweather/Archive/CUSTOM-ARC-2018-06-25.csv'
-    data = StringIO(requests.get(url).content.decode('utf-8'))
-    pdData = pandas.read_csv(data)
-    return pdData.to_json()
-
 
 
 class MapSettings:

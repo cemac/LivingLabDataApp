@@ -23,7 +23,7 @@ You can see the concentration map for the latest monitoring walk below and find 
     <p>
   </div>
     {% if settings != false %}
-        <h1 style="text-align:center;">{{mapTitle}}</h1>
+        <h1 style="text-align:center;" id="map-title"></h1>
         <p style="text-align:center;"><img id='colourbar' src="" alt="colour bar" style="width:750px;"></p>
         <div id="map"></div>
     {% endif %}
@@ -40,8 +40,11 @@ You can see the concentration map for the latest monitoring walk below and find 
             var grid = JSON.parse('{{ grid | safe }}');
             var map;
 
+            $('#colourbar').attr("src", settings['colorbar']);
+            $('#map-title').text(settings['mapTitle'])
+
+
             function initMap() {
-                $('#colourbar').attr("src", settings['colorbar']);
 
                 map = new google.maps.Map(document.getElementById('map'), {
                     zoom: 16,

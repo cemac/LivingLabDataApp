@@ -112,6 +112,7 @@ def average():
             for result in results:
                 settings.addData(MapData(result['id']))
             settings.getMeanLatLng()
+            settings.mapTitle = "Long-term Average Concentration"
             grid = Grid(settings.data, 'hex.geojson')
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')

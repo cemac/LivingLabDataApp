@@ -100,7 +100,7 @@ def index():
         return render_template('home.html', subd=subd, settings=False)
 
 #average
-@app.route('/average')
+@app.route('/maps/average')
 def average():
     colorProfile = 'gr'
     latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
@@ -118,12 +118,12 @@ def average():
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
 
-        return render_template('average.html', subd=subd
-                                , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
-                                , grid=json.dumps(grid.toJSON(), cls=ComplexEncoder)
+        return render_template('maps/average.html', subd=subd
+                               , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
+                               , grid=json.dumps(grid.toJSON(), cls=ComplexEncoder)
                                )
     else:
-        return render_template('average.html', subd=subd, settings=False)
+        return render_template('maps/average.html', subd=subd, settings=False)
 
 
 #Register form class

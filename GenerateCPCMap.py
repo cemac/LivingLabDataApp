@@ -168,19 +168,30 @@ def rgba_to_hex(rgba_color) :
     return '#{r:02x}{g:02x}{b:02x}'.format(r=red,g=green,b=blue)
 
 
-def ArrayMiddle(arr):
-    return np.mean([min(arr), max(arr)])
+def ArrayMiddle(minLatLng, maxLatLng):
+    return [np.mean([minLatLng[0], maxLatLng[0]]), np.mean([minLatLng[1], maxLatLng[1]])]
 
 
-def MeanLatLng(lats, lons):
-    return [ArrayMiddle(lats), ArrayMiddle(lons)]
+def ArrayStats(lats, lons):
+    arrstats = {}
+    arrstats['min'] = [min(lats), min(lons)]
+    arrstats['max'] = [max(lats), max(lons)]
+    arrstats['middle'] = ArrayMiddle(arrstats['min'], arrstats['max'])
+    return arrstats
 
+def elementMean(arr):
+    return np.mean(arr, axis=0)
+
+def elementMin(arr):
+    return np.min(arr, axis=0)
+
+def elementMax(arr):
+    return np.max(arr, axis=0)
 
 def CreateBins(file):
     #binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
     binLims = np.loadtxt(file, delimiter=',', dtype='int', encoding='utf-8', skiprows=1)
     return binLims
-
 
 def AssignColours(binLims, colorProfile):
     # List of Colormaps: https://matplotlib.org/users/colormaps.html

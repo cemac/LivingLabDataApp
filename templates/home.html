@@ -48,6 +48,12 @@ You can see the concentration map for the latest monitoring walk below and find 
                     mapTypeId: 'hybrid'
                 })
 
+                // set extent to fit all data
+                var southwest = new google.maps.LatLng(settings['minpoint'][0], settings['minpoint'][1])
+                var northeast = new google.maps.LatLng(settings['maxpoint'][0], settings['maxpoint'][1])
+                var llb = new google.maps.LatLngBounds(southwest, northeast)
+                map.fitBounds(llb)
+
                 for (var id in settings.data)
                 {
                     var MapData = settings.data[id];

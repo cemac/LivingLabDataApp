@@ -90,7 +90,7 @@ def index():
             settings = MapSettings(colorProfile)
             mapClass = MapData(latest['id'])
             settings.addData(mapClass)
-            settings.getMeanLatLng()
+            settings.getArrayStats()
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
@@ -277,7 +277,7 @@ def maps(id,mapType,colorProfile):
     else:
         abort(404)
 
-    settings.getMeanLatLng()
+    settings.getArrayStats()
 
     return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
 
@@ -327,6 +327,8 @@ class MapSettings:
         self.binLims = []
         self.colsHex = []
         self.midpoint = []
+        # extent is [SE point, NW point]
+        self.extent = []
         self.data = {}
 
         self.setBinColor(colorProfile)
@@ -344,14 +346,18 @@ class MapSettings:
         if not os.path.exists(self.colorbar):
             GenerateCPCMap.CreateColourBar(self.binLims, self.colsHex, colorProfile)
 
-    def getMeanLatLng(self):
-        meanLats = []
-        meanLngs = []
+    def getArrayStats(self):
+        midpoints = []
+        minpoints = []
+        maxpoints = []
         for key in self.data:
-            meanLatLng = GenerateCPCMap.MeanLatLng(self.data[key].lats, self.data[key].lons)
-            meanLats.append(meanLatLng[0])
-            meanLngs.append(meanLatLng[1])
-        self.midpoint = GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
+            arrstats = GenerateCPCMap.ArrayStats(self.data[key].lats, self.data[key].lons)
+            midpoints.append(arrstats['middle'])
+            minpoints.append(arrstats['min'])
+            maxpoints.append(arrstats['max'])
+        self.midpoint = GenerateCPCMap.elementMean(midpoints)
+        self.extent.append(GenerateCPCMap.elementMin(minpoints))
+        self.extent.append(GenerateCPCMap.elementMax(maxpoints))
 
     def toJSON(self):
         return dict(
@@ -359,7 +365,9 @@ class MapSettings:
             , mapTitle=self.mapTitle
             , binLims=self.binLims
             , colsHex=self.colsHex
-            , midpoint=self.midpoint
+            , midpoint=self.midpoint.tolist()
+            , minpoint=self.extent[0].tolist()
+            , maxpoint=self.extent[1].tolist()
             , data=self.data
         )
 

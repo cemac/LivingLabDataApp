@@ -179,6 +179,9 @@ def ArrayStats(lats, lons):
     arrstats['middle'] = ArrayMiddle(arrstats['min'], arrstats['max'])
     return arrstats
 
+def Median(arr):
+    return np.median(arr)
+
 def elementMean(arr):
     return np.mean(arr, axis=0)
 
@@ -255,3 +258,4 @@ def CreateColourBar(binLims, colsHex, colorProfile):
                                     orientation='horizontal')
     cb.set_label('particles per cubic centimetre')
     plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
+

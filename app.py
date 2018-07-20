@@ -6,6 +6,7 @@ from functools import wraps
 from werkzeug.utils import secure_filename
 import os
 import GenerateCPCMap
+import SpatialAnalysis
 import pandas
 from dateutil.parser import parse
 import datetime as dt
@@ -102,6 +103,32 @@ def index():
         return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
     else:
         return render_template('home.html', subd=subd, settings=False)
+
+#average
+@app.route('/maps/average')
+def average():
+    colorProfile = 'gr'
+    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+
+    if latest is not None:
+        try:
+            settings = MapSettings(colorProfile)
+            results = query_db('SELECT * FROM CPCFiles')
+            for result in results:
+                settings.addData(MapData(result['id']))
+            settings.getMeanLatLng()
+            settings.mapTitle = "Long-term Average Concentration"
+            grid = Grid(settings.data, 'hex.geojson')
+        except Exception as e:
+            flash('Error generating map: ' + str(e), 'danger')
+            return redirect(subd + '/error')
+
+        return render_template('maps/average.html', subd=subd
+                               , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
+                               , grid=json.dumps(grid.toJSON(), cls=ComplexEncoder)
+                               )
+    else:
+        return render_template('maps/average.html', subd=subd, settings=False)
 
 
 #Register form class
@@ -417,6 +444,55 @@ class MapData:
             , lons=self.lons.tolist()
             , concs=self.concs.tolist()
             , startDate=self.startDate
+        )
+
+class Grid:
+
+    def __init__(self, data, csv):
+        self.cells = []
+
+        shpCells = SpatialAnalysis.ReadGeoJSON('static/'+csv)
+        for shpCell in shpCells:
+            cell = Cell(shpCell)
+            self.cells.append(cell)
+
+        for dataset in data:
+            self.cells = SpatialAnalysis.SpatialJoin(data[dataset], self.cells)
+
+        for cell in self.cells:
+            cell.average()
+
+
+    def toJSON(self):
+        return dict(
+            cells=self.cells
+        )
+
+class Cell:
+
+    def __init__(self, polygon):
+        self.lats = []
+        self.lons = []
+        self.concs = []
+        self.polygon = polygon
+        self.centroid = []
+        self.concMedian = 0
+        for lat in polygon.boundary.xy[0]:
+            self.lats.append(lat)
+        for lons in polygon.boundary.xy[1]:
+            self.lons.append(lons)
+        self.centroid = [polygon.centroid.x, polygon.centroid.y]
+
+    def average(self):
+        if self.concs:
+            self.concMedian = GenerateCPCMap.Median(self.concs)
+
+    def toJSON(self):
+        return dict(
+            lats=self.lats
+            ,lons=self.lons
+            ,conc=self.concMedian
+            ,centroid=self.centroid
         )
 
 

@@ -116,7 +116,7 @@ def average():
             results = query_db('SELECT * FROM CPCFiles')
             for result in results:
                 settings.addData(MapData(result['id']))
-            settings.getMeanLatLng()
+            settings.getArrayStats()
             settings.mapTitle = "Long-term Average Concentration"
             grid = Grid(settings.data, 'hex.geojson')
         except Exception as e:

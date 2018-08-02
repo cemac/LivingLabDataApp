@@ -1,4 +1,4 @@
-from flask import Flask, g, render_template, flash, redirect, url_for, session, request, logging, abort, send_from_directory
+from flask import Flask, g, render_template, flash, redirect, url_for, session, request, logging, abort, send_from_directory, Response
 import sqlite3
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
@@ -24,6 +24,7 @@ MAP_DIR = 'templates/maps'
 DEL_DIR = 'deleted'
 CPC_DEL_DIR = DEL_DIR+'/'+CPC_DIR
 GPS_DEL_DIR = DEL_DIR+'/'+GPS_DIR
+OPC_DIR = 'OPCFiles'
 ALLOWED_EXTENSIONS = set(['csv'])
 DATABASE = 'LivingLabDataApp.db'
 assert os.path.exists(DATABASE), "Unable to locate database"
@@ -47,6 +48,8 @@ if not os.path.isdir(CPC_DEL_DIR):
     os.mkdir(CPC_DEL_DIR)
 if not os.path.isdir(GPS_DEL_DIR):
     os.mkdir(GPS_DEL_DIR)
+if not os.path.isdir(OPC_DIR):
+    os.mkdir(OPC_DIR)
 
 #Assertion error handling (flash error message, stay on uploads page)
 @app.errorhandler(AssertionError)
@@ -205,6 +208,58 @@ def logout():
     session.clear()
     flash('You are now logged out', 'success')
     return redirect(subd+'/login')
+
+@app.route('/staticdata', methods=['GET', 'POST'])
+def staticdata():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part', 'danger')
+            return Response("{'a':'b'}", status=415, mimetype='application/json')
+        file = request.files['file']
+        # No selected file
+        if file.filename == '':
+            return Response("{'a':'b'}", status=403, mimetype='application/json')
+        # Else upload file (unless bad extension)
+        if file and allowed_file(file.filename):
+            try:
+                OPCText = file.read().decode("utf-8")
+            except Exception:
+                raise
+            # Add entry to OPCFiles DB
+            if query_db('SELECT id FROM OPCFiles WHERE filename = ?', (file.filename,), one=True) is None:
+                # Create cursor
+                db = get_db()
+                cur = db.cursor()
+                # Execute query:
+                cur.execute("INSERT INTO OPCFiles(filename, location) VALUES (?,?)",
+                    (secure_filename(file.filename), "LAB"))
+                # Commit to DB
+                db.commit()
+                # Close connection
+                cur.close()
+
+            # .write() deletes original on collision
+            OPCFile = open(OPC_DIR + '/' + file.filename, 'w', encoding='utf-8')
+            OPCFile.write(OPCText)
+            OPCFile.close()
+            return Response("{'a':'b'}", status=201, mimetype='application/json')
+        else:
+            return Response("{'a':'b'}", status=406, mimetype='application/json')
+    AllOPCFiles = query_db('SELECT * FROM OPCFiles')
+    if AllOPCFiles is not None:
+        AllOPCFiles = reversed(AllOPCFiles)
+        return render_template('static.html', AllOPCFiles=AllOPCFiles, LoggedIn=('logged_in' in session),subd=subd)
+    else:
+        return render_template('static.html',LoggedIn=('logged_in' in session),subd=subd)
+
+@app.route('/staticdata/<string:id>', methods=['POST'])
+def downloadOPCData(id):
+    filename = query_db('SELECT * FROM OPCFiles WHERE id = ?',(id,),one=True)['filename']
+    if os.path.exists(OPC_DIR+'/'+filename):
+        return send_from_directory(OPC_DIR, filename,as_attachment=True,attachment_filename=filename)
+    else:
+        abort(404)
+
 
 
 #Uploads

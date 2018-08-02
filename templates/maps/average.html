@@ -23,7 +23,7 @@ You can see the concentration map for the latest monitoring walk below and find 
     <p>
   </div>
     {% if settings != false %}
-        <h1 style="text-align:center;">{{mapTitle}}</h1>
+        <h1 style="text-align:center;" id="map-title"></h1>
         <p style="text-align:center;"><img id='colourbar' src="" alt="colour bar" style="width:750px;"></p>
         <div id="map"></div>
     {% endif %}
@@ -37,28 +37,22 @@ You can see the concentration map for the latest monitoring walk below and find 
         {#  jinja templates will ignore javascript conditionals and fill in variables first  #}
         {% if settings != false %}
             var settings = JSON.parse('{{ settings | safe}}');
+            var grid = JSON.parse('{{ grid | safe }}');
             var map;
 
+            $('#colourbar').attr("src", settings['colorbar']);
+            $('#map-title').text(settings['mapTitle'])
+
+
             function initMap() {
-                $('#colourbar').attr("src", settings['colorbar']);
 
                 map = new google.maps.Map(document.getElementById('map'), {
                     zoom: 16,
                     center: {lat: settings['midpoint'][0], lng: settings['midpoint'][1]},
                     mapTypeId: 'hybrid'
-                })
+                });
 
-                // set extent to fit all data
-                var southwest = new google.maps.LatLng(settings['minpoint'][0], settings['minpoint'][1])
-                var northeast = new google.maps.LatLng(settings['maxpoint'][0], settings['maxpoint'][1])
-                var llb = new google.maps.LatLngBounds(southwest, northeast)
-                map.fitBounds(llb)
-
-                for (var id in settings.data)
-                {
-                    var MapData = settings.data[id];
-                    addCPCLines(MapData.lats, MapData.lons, MapData.concs, settings.binLims, settings.colsHex);
-                }
+                addGrid(grid, settings.binLims, settings.colsHex)
             }
         {% endif %}
     </script>

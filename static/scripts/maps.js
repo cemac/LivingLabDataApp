@@ -8,7 +8,7 @@ function addCPCLines (lats, lons, concs, binLims, colsHex) {
         // without the closure, there is only one content and position
         ( function() {
 
-                   // get average concentration between the points
+            // get average concentration between the points
             var meanConc = Math.ceil((concs[i] + concs[i+1])/2);
             var midPoint = [
                 (lats[i] + lats[i+1]) / 2,
@@ -48,6 +48,56 @@ function addCPCLines (lats, lons, concs, binLims, colsHex) {
 
 }
 
+function addGrid(grid, binLims, colsHex) {
+    for (var id in grid.cells) {
+        var cell = grid.cells[id]
+        if(cell.conc == 0)
+        {
+            continue;
+        }
+        else {
+            // Uses a javascript closure to make each infowindow have different data (position, content)
+            // without the closure, there is only one content and position
+            (function () {
+
+                // Define the LatLng coordinates for the polygon.
+                var cellCoords = []
+                for (var i = 0; i < cell.lats.length; i++) {
+                    cellCoords.push({lat: cell.lons[i], lng: cell.lats[i]})
+                }
+
+                var color = getColor(cell.conc, binLims, colsHex)
+
+                // Construct the polygon.
+                var cellPolygon = new google.maps.Polygon({
+                    paths: cellCoords,
+                    strokeColor: color,
+                    strokeOpacity: 0.8,
+                    strokeWeight: 1,
+                    fillColor: color,
+                    fillOpacity: 0.35,
+                    map: map
+                });
+
+                var content = Math.ceil(cell.conc).toString();
+                var position = {lat: cell.centroid[1], lng: cell.centroid[0]};
+                var clickFunction = function (content, position) {
+                    var infoWindow = new google.maps.InfoWindow({
+                        content: content
+                    })
+                    infoWindow.setPosition(position);
+                    infoWindow.open(map);
+                }
+
+                google.maps.event.addListener(cellPolygon, 'click', function (event) {
+                    clickFunction(content, position);
+                })
+            }())
+        }
+    }
+}
+
+
 
 function getColor(conc, binLims, colsHex)
 {
@@ -73,5 +123,4 @@ function dataToLines(data, binLims, colsHex)
         var MapData = data[id];
         addCPCLines(MapData.lats, MapData.lons, MapData.concs, binLims, colsHex);
     }
-
 }

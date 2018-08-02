@@ -6,6 +6,7 @@ from functools import wraps
 from werkzeug.utils import secure_filename
 import os
 import GenerateCPCMap
+import SpatialAnalysis
 import pandas
 from dateutil.parser import parse
 import datetime as dt
@@ -94,18 +95,43 @@ def index():
         try:
             settings = MapSettings(colorProfile)
             mapClass = MapData(latest['id'])
-            settings.addData(mapClass)
             startYMD = mapClass.parseYMD()
             results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
             for result in results:
                 settings.addData(MapData(result['id']))
-            settings.getMeanLatLng()
+            settings.getArrayStats()
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
         return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
     else:
         return render_template('home.html', subd=subd, settings=False)
+
+#average
+@app.route('/maps/average')
+def average():
+    colorProfile = 'gr'
+    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+
+    if latest is not None:
+        try:
+            settings = MapSettings(colorProfile)
+            results = query_db('SELECT * FROM CPCFiles')
+            for result in results:
+                settings.addData(MapData(result['id']))
+            settings.getArrayStats()
+            settings.mapTitle = "Long-term Average Concentration"
+            grid = Grid(settings.data, 'hex.geojson')
+        except Exception as e:
+            flash('Error generating map: ' + str(e), 'danger')
+            return redirect(subd + '/error')
+
+        return render_template('maps/average.html', subd=subd
+                               , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
+                               , grid=json.dumps(grid.toJSON(), cls=ComplexEncoder)
+                               )
+    else:
+        return render_template('maps/average.html', subd=subd, settings=False)
 
 
 #Register form class
@@ -338,7 +364,7 @@ def maps(id,mapType,colorProfile):
     else:
         abort(404)
 
-    settings.getMeanLatLng()
+    settings.getArrayStats()
 
     return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
 
@@ -388,6 +414,8 @@ class MapSettings:
         self.binLims = []
         self.colsHex = []
         self.midpoint = []
+        # extent is [SE point, NW point]
+        self.extent = []
         self.data = {}
 
         self.setBinColor(colorProfile)
@@ -405,14 +433,18 @@ class MapSettings:
         if not os.path.exists(self.colorbar):
             GenerateCPCMap.CreateColourBar(self.binLims, self.colsHex, colorProfile)
 
-    def getMeanLatLng(self):
-        meanLats = []
-        meanLngs = []
+    def getArrayStats(self):
+        midpoints = []
+        minpoints = []
+        maxpoints = []
         for key in self.data:
-            meanLatLng = GenerateCPCMap.MeanLatLng(self.data[key].lats, self.data[key].lons)
-            meanLats.append(meanLatLng[0])
-            meanLngs.append(meanLatLng[1])
-        self.midpoint = GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
+            arrstats = GenerateCPCMap.ArrayStats(self.data[key].lats, self.data[key].lons)
+            midpoints.append(arrstats['middle'])
+            minpoints.append(arrstats['min'])
+            maxpoints.append(arrstats['max'])
+        self.midpoint = GenerateCPCMap.elementMean(midpoints)
+        self.extent.append(GenerateCPCMap.elementMin(minpoints))
+        self.extent.append(GenerateCPCMap.elementMax(maxpoints))
 
     def toJSON(self):
         return dict(
@@ -420,7 +452,9 @@ class MapSettings:
             , mapTitle=self.mapTitle
             , binLims=self.binLims
             , colsHex=self.colsHex
-            , midpoint=self.midpoint
+            , midpoint=self.midpoint.tolist()
+            , minpoint=self.extent[0].tolist()
+            , maxpoint=self.extent[1].tolist()
             , data=self.data
         )
 
@@ -465,6 +499,55 @@ class MapData:
             , lons=self.lons.tolist()
             , concs=self.concs.tolist()
             , startDate=self.startDate
+        )
+
+class Grid:
+
+    def __init__(self, data, csv):
+        self.cells = []
+
+        shpCells = SpatialAnalysis.ReadGeoJSON('static/'+csv)
+        for shpCell in shpCells:
+            cell = Cell(shpCell)
+            self.cells.append(cell)
+
+        for dataset in data:
+            self.cells = SpatialAnalysis.SpatialJoin(data[dataset], self.cells)
+
+        for cell in self.cells:
+            cell.average()
+
+
+    def toJSON(self):
+        return dict(
+            cells=self.cells
+        )
+
+class Cell:
+
+    def __init__(self, polygon):
+        self.lats = []
+        self.lons = []
+        self.concs = []
+        self.polygon = polygon
+        self.centroid = []
+        self.concMedian = 0
+        for lat in polygon.boundary.xy[0]:
+            self.lats.append(lat)
+        for lons in polygon.boundary.xy[1]:
+            self.lons.append(lons)
+        self.centroid = [polygon.centroid.x, polygon.centroid.y]
+
+    def average(self):
+        if self.concs:
+            self.concMedian = GenerateCPCMap.Median(self.concs)
+
+    def toJSON(self):
+        return dict(
+            lats=self.lats
+            ,lons=self.lons
+            ,conc=self.concMedian
+            ,centroid=self.centroid
         )
 
 

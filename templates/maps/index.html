@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block body %}
-    <h1 style="text-align:center;">{{mapTitle}}</h1>
+    <h1 style="text-align:center;" id="map-title"></h1>
     <p style="text-align:center;"><img id="colourbar" src="" alt="colourbar" style="width:750px;"></p>
     <div id="map"></div>
 {% endblock %}
@@ -24,6 +24,7 @@
         var map;
         var settings = JSON.parse('{{ settings | safe }}');
 
+        $('#map-title').text(settings['mapTitle'])
         $('#colourbar').attr("src", settings['colorbar']);
 
         function initMap() {
@@ -33,7 +34,15 @@
                 mapTypeId: 'hybrid'
             });
 
+            // set extent to fit all data
+            var southwest = new google.maps.LatLng(settings['minpoint'][0], settings['minpoint'][1])
+            var northeast = new google.maps.LatLng(settings['maxpoint'][0], settings['maxpoint'][1])
+            var llb = new google.maps.LatLngBounds(southwest, northeast)
+            map.fitBounds(llb)
+
             dataToLines(settings.data, settings.binLims, settings.colsHex)
+            console.log(settings.data);
+
 
         }
     </script>

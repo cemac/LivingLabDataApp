@@ -92,6 +92,10 @@ def index():
             settings = MapSettings(colorProfile)
             mapClass = MapData(latest['id'])
             settings.addData(mapClass)
+            startYMD = mapClass.parseYMD()
+            results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
+            for result in results:
+                settings.addData(MapData(result['id']))
             settings.getMeanLatLng()
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')

@@ -254,11 +254,15 @@ def staticdata():
             # Add entry to OPCFiles DB
             if query_db('SELECT id FROM OPCFiles WHERE filename = ?', (file.filename,), one=True) is None:
                 # Create cursor
+                location = file.filename.split('_')[0]
+                if location == '':
+                    location = 'UNDEFINED'
+
                 db = get_db()
                 cur = db.cursor()
                 # Execute query:
                 cur.execute("INSERT INTO OPCFiles(filename, location) VALUES (?,?)",
-                    (secure_filename(file.filename), file.filename.split("_")[0]))
+                    (secure_filename(file.filename), location))
                 # Commit to DB
                 db.commit()
                 # Close connection

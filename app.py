@@ -258,7 +258,7 @@ def staticdata():
                 cur = db.cursor()
                 # Execute query:
                 cur.execute("INSERT INTO OPCFiles(filename, location) VALUES (?,?)",
-                    (secure_filename(file.filename), "LAB"))
+                    (secure_filename(file.filename), file.filename.split("_")[0]))
                 # Commit to DB
                 db.commit()
                 # Close connection

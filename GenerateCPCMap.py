@@ -193,7 +193,7 @@ def elementMax(arr):
 
 def CreateBins(file):
     #binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
-    binLims = np.loadtxt(file, delimiter=',', dtype='int', encoding='utf-8', skiprows=1)
+    binLims = np.loadtxt(file, delimiter=',', dtype='int', skiprows=1)
     return binLims
 
 def AssignColours(binLims, colorProfile):
@@ -258,4 +258,3 @@ def CreateColourBar(binLims, colsHex, colorProfile):
                                     orientation='horizontal')
     cb.set_label('particles per cubic centimetre')
     plt.savefig("static/colourbar_"+colorProfile+".png", dpi=300, transparent=True)
-

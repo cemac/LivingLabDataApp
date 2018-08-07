@@ -429,7 +429,7 @@ class MapSettings:
         self.colsHex = []
         self.midpoint = [53.806571, -1.554926]      # centre of campus
         # extent is [SE point, NW point]
-        self.extent = []
+        self.extent = [0, 0]
         self.data = {}
 
         self.setBinColor(colorProfile)
@@ -456,7 +456,7 @@ class MapSettings:
             midpoints.append(arrstats['middle'])
             minpoints.append(arrstats['min'])
             maxpoints.append(arrstats['max'])
-        self.midpoint = GenerateCPCMap.elementMean(midpoints)
+        self.midpoint = GenerateCPCMap.elementMean(midpoints).tolist()
         self.extent.append(GenerateCPCMap.elementMin(minpoints))
         self.extent.append(GenerateCPCMap.elementMax(maxpoints))
 
@@ -466,9 +466,9 @@ class MapSettings:
             , mapTitle=self.mapTitle
             , binLims=self.binLims
             , colsHex=self.colsHex
-            , midpoint=self.midpoint.tolist()
-            , minpoint=self.extent[0].tolist()
-            , maxpoint=self.extent[1].tolist()
+            , midpoint=self.midpoint
+            , minpoint=self.extent[0]
+            , maxpoint=self.extent[1]
             , data=self.data
         )
 

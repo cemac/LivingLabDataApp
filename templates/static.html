@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Static</h1>
+  <hr>
+
+  {% if AllOPCFiles %}
+    <h2>All Monitoring Sites</h2>
+    <table class="table table-striped">
+      <tr>
+        <th>ID</th>
+        <th>OPC filename</th>
+        <th>Location Code</th>
+        <th>Upload date</th>
+      </tr>
+      {% for file in AllOPCFiles %}
+        <tr>
+          <td>{{file.id}}</td>
+          <td>
+            <form action='{{subd}}/staticdata/{{file.id}}' method="post">
+              <a href="#" onclick="this.parentNode.submit()">{{file.filename}}</a>
+            </form>
+          </td>
+          <td>{{ file.location }}</td>
+          <td>{{file.upload_date}}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

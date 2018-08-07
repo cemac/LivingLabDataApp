@@ -1,4 +1,4 @@
-from flask import Flask, g, render_template, flash, redirect, url_for, session, request, logging, abort, send_from_directory
+from flask import Flask, g, render_template, flash, redirect, url_for, session, request, logging, abort, send_from_directory, Response
 import sqlite3
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
@@ -11,6 +11,8 @@ import pandas
 from dateutil.parser import parse
 import datetime as dt
 import json
+import requests
+from io import StringIO
 
 app = Flask(__name__)
 assert os.path.exists('AppSecretKey.txt'), "Unable to locate app secret key"
@@ -23,6 +25,7 @@ MAP_DIR = 'templates/maps'
 DEL_DIR = 'deleted'
 CPC_DEL_DIR = DEL_DIR+'/'+CPC_DIR
 GPS_DEL_DIR = DEL_DIR+'/'+GPS_DIR
+OPC_DIR = 'OPCFiles'
 ALLOWED_EXTENSIONS = set(['csv'])
 DATABASE = 'LivingLabDataApp.db'
 assert os.path.exists(DATABASE), "Unable to locate database"
@@ -31,7 +34,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd=""
+subd="/living-lab"
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -46,6 +49,8 @@ if not os.path.isdir(CPC_DEL_DIR):
     os.mkdir(CPC_DEL_DIR)
 if not os.path.isdir(GPS_DEL_DIR):
     os.mkdir(GPS_DEL_DIR)
+if not os.path.isdir(OPC_DIR):
+    os.mkdir(OPC_DIR)
 
 #Assertion error handling (flash error message, stay on uploads page)
 @app.errorhandler(AssertionError)
@@ -90,8 +95,11 @@ def index():
         try:
             settings = MapSettings(colorProfile)
             mapClass = MapData(latest['id'])
-            settings.addData(mapClass)
-            settings.getMeanLatLng()
+            startYMD = mapClass.parseYMD()
+            results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
+            for result in results:
+                settings.addData(MapData(result['id']))
+            settings.getArrayStats()
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
@@ -108,10 +116,6 @@ def average():
     if latest is not None:
         try:
             settings = MapSettings(colorProfile)
-            #results = query_db('SELECT * FROM CPCFiles')
-            #for result in results:
-            #    settings.addData(MapData(result['id']))
-            # settings.getMeanLatLng()
             settings.mapTitle = "Long-term Average Concentration"
 
             with open('static/average.json', 'r') as f:
@@ -230,6 +234,62 @@ def logout():
     flash('You are now logged out', 'success')
     return redirect(subd+'/login')
 
+@app.route('/staticdata', methods=['GET', 'POST'])
+def staticdata():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part', 'danger')
+            return Response("{'a':'b'}", status=415, mimetype='application/json')
+        file = request.files['file']
+        # No selected file
+        if file.filename == '':
+            return Response("{'a':'b'}", status=403, mimetype='application/json')
+        # Else upload file (unless bad extension)
+        if file and allowed_file(file.filename):
+            try:
+                OPCText = file.read().decode("utf-8")
+            except Exception:
+                raise
+            # Add entry to OPCFiles DB
+            if query_db('SELECT id FROM OPCFiles WHERE filename = ?', (file.filename,), one=True) is None:
+                # Create cursor
+                location = file.filename.split('_')[0]
+                if location == '':
+                    location = 'UNDEFINED'
+
+                db = get_db()
+                cur = db.cursor()
+                # Execute query:
+                cur.execute("INSERT INTO OPCFiles(filename, location) VALUES (?,?)",
+                    (secure_filename(file.filename), location))
+                # Commit to DB
+                db.commit()
+                # Close connection
+                cur.close()
+
+            # .write() deletes original on collision
+            OPCFile = open(OPC_DIR + '/' + file.filename, 'w', encoding='utf-8')
+            OPCFile.write(OPCText)
+            OPCFile.close()
+            return Response("{'a':'b'}", status=201, mimetype='application/json')
+        else:
+            return Response("{'a':'b'}", status=406, mimetype='application/json')
+    AllOPCFiles = query_db('SELECT * FROM OPCFiles')
+    if AllOPCFiles is not None:
+        AllOPCFiles = reversed(AllOPCFiles)
+        return render_template('static.html', AllOPCFiles=AllOPCFiles, LoggedIn=('logged_in' in session),subd=subd)
+    else:
+        return render_template('static.html',LoggedIn=('logged_in' in session),subd=subd)
+
+@app.route('/staticdata/<string:id>', methods=['POST'])
+def downloadOPCData(id):
+    filename = query_db('SELECT * FROM OPCFiles WHERE id = ?',(id,),one=True)['filename']
+    if os.path.exists(OPC_DIR+'/'+filename):
+        return send_from_directory(OPC_DIR, filename,as_attachment=True,attachment_filename=filename)
+    else:
+        abort(404)
+
+
 
 #Uploads
 @app.route('/uploads', methods=["GET","POST"])
@@ -318,7 +378,7 @@ def maps(id,mapType,colorProfile):
     else:
         abort(404)
 
-    settings.getMeanLatLng()
+    settings.getArrayStats()
 
     return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
 
@@ -368,6 +428,8 @@ class MapSettings:
         self.binLims = []
         self.colsHex = []
         self.midpoint = [53.806571, -1.554926]      # centre of campus
+        # extent is [SE point, NW point]
+        self.extent = []
         self.data = {}
 
         self.setBinColor(colorProfile)
@@ -380,19 +442,23 @@ class MapSettings:
             self.mapTitle = 'Concentration map for walk commencing ' + mapData.startDate
 
     def setBinColor(self, colorProfile):
-        self.binLims = GenerateCPCMap.CreateBins()
+        self.binLims = GenerateCPCMap.CreateBins("static/BinLimits.csv").tolist()
         self.colsHex = GenerateCPCMap.AssignColours(self.binLims, colorProfile)
         if not os.path.exists(self.colorbar):
             GenerateCPCMap.CreateColourBar(self.binLims, self.colsHex, colorProfile)
 
-    def getMeanLatLng(self):
-        meanLats = []
-        meanLngs = []
+    def getArrayStats(self):
+        midpoints = []
+        minpoints = []
+        maxpoints = []
         for key in self.data:
-            meanLatLng = GenerateCPCMap.MeanLatLng(self.data[key].lats, self.data[key].lons)
-            meanLats.append(meanLatLng[0])
-            meanLngs.append(meanLatLng[1])
-        self.midpoint = GenerateCPCMap.MeanLatLng(meanLats, meanLngs)
+            arrstats = GenerateCPCMap.ArrayStats(self.data[key].lats, self.data[key].lons)
+            midpoints.append(arrstats['middle'])
+            minpoints.append(arrstats['min'])
+            maxpoints.append(arrstats['max'])
+        self.midpoint = GenerateCPCMap.elementMean(midpoints)
+        self.extent.append(GenerateCPCMap.elementMin(minpoints))
+        self.extent.append(GenerateCPCMap.elementMax(maxpoints))
 
     def toJSON(self):
         return dict(
@@ -400,7 +466,9 @@ class MapSettings:
             , mapTitle=self.mapTitle
             , binLims=self.binLims
             , colsHex=self.colsHex
-            , midpoint=self.midpoint
+            , midpoint=self.midpoint.tolist()
+            , minpoint=self.extent[0].tolist()
+            , maxpoint=self.extent[1].tolist()
             , data=self.data
         )
 

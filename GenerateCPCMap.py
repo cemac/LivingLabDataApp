@@ -123,7 +123,7 @@ def FetchGPSData(tokensFile,CPCdate,CPClen):
         for activity in myActivities:
             startDate=activity.start_date_local
             #print('    '+activity.name+':',startDate,'Local time')
-            if abs((CPCdate-startDate).total_seconds()) < 300:
+            if abs((CPCdate-startDate).total_seconds()) < 60:
                 validActs.update({i:activity.id})
     assert len(validActs) > 0, "No GPS activities with a start time within 5 minutes of the CPC data file start time"
     DeltaT=1e10
@@ -142,7 +142,7 @@ def FetchGPSData(tokensFile,CPCdate,CPClen):
     startDate=activity.start_date_local
     endDate=startDate+dt.timedelta(seconds=activity.elapsed_time.seconds)
     endDateCPC=CPCdate+dt.timedelta(seconds=CPClen)
-    assert abs((endDateCPC-endDate).total_seconds()) < 300, "No valid GPS activities with an end time within 5 minutes of the CPC data file end time"
+    assert abs((endDateCPC-endDate).total_seconds()) < 60, "No valid GPS activities with an end time within 1 minute of the CPC data file end time"
     myTypes = ['time', 'latlng']
     myStream = client.get_activity_streams(chosenAct,types=myTypes)
     latlon=myStream['latlng'].data
@@ -168,27 +168,61 @@ def rgba_to_hex(rgba_color) :
     return '#{r:02x}{g:02x}{b:02x}'.format(r=red,g=green,b=blue)
 
 
-def ArrayMiddle(arr):
-    return np.mean([min(arr), max(arr)])
+def ArrayMiddle(minLatLng, maxLatLng):
+    return [np.mean([minLatLng[0], maxLatLng[0]]), np.mean([minLatLng[1], maxLatLng[1]])]
 
 
-def MeanLatLng(lats, lons):
-    return [ArrayMiddle(lats), ArrayMiddle(lons)]
+def ArrayStats(lats, lons):
+    arrstats = {}
+    arrstats['min'] = [min(lats), min(lons)]
+    arrstats['max'] = [max(lats), max(lons)]
+    arrstats['middle'] = ArrayMiddle(arrstats['min'], arrstats['max'])
+    return arrstats
 
 def Median(arr):
     return np.median(arr)
 
+def elementMean(arr):
+    return np.mean(arr, axis=0)
 
-def CreateBins():
-    binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
+def elementMin(arr):
+    return np.min(arr, axis=0)
+
+def elementMax(arr):
+    return np.max(arr, axis=0)
+
+def CreateBins(file):
+    #binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
+    binLims = np.loadtxt(file, delimiter=',', dtype='int', encoding='utf-8', skiprows=1)
     return binLims
-
 
 def AssignColours(binLims, colorProfile):
     # List of Colormaps: https://matplotlib.org/users/colormaps.html
     colsHex = []
     if(colorProfile == "gr"):
-        colsHex=['#00FF40','#00FF00','#40FF00','#80FF00','#BFFF00','#FFFF00','#FFBF00','#FF8000','#FF0000','#8000FF']
+        rgmap = {'red': ((0.0, 0.1, 0.1),
+                         (0.2, 0.0, 0.0),
+                         (0.5, 0.96, 0.96),
+                         (0.9, 1.0, 1.0),
+                         (1.0, 0.5, 0.5)
+                         ),
+
+                  'green': ((0.0, 0.6, 0.6),
+                            (0.2, 1.0, 1.0),
+                            (0.5, 1.0, 1.0),
+                            (0.9, 0.0, 0.0),
+                            (1.0, 0.0, 0.0),
+                            ),
+
+                  'blue': ((0.0, 0.1, 0.1),
+                           (0.2, 0.0, 0.0),
+                           (0.5, 0.35, 0.35),
+                           (0.9, 0.0, 0.0),
+                           (1.0, 1.0, 1.0),
+                           )
+                  }
+
+        cmap = mpl.colors.LinearSegmentedColormap('RedGreen', rgmap)
     else:
         if(colorProfile == "bg"):
             colorMap = 'viridis'
@@ -198,8 +232,8 @@ def AssignColours(binLims, colorProfile):
             colorMap = 'viridis'                      # if error, default to colorblind
         cmap = matplotlib.cm.get_cmap(colorMap)
 
-        for i in range(0,len(binLims)+1):               # generate a color for each bin
-            colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))))
+    for i in range(0,len(binLims)+1):               # generate a color for each bin
+        colsHex.append(rgba_to_hex(cmap(i*1/(len(binLims)))))
 
     return colsHex
 

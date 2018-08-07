@@ -1,6 +1,7 @@
 *.directory
 AppSecretKey.txt
 CPCFiles/
+OPCFiles/
 GPSFiles
 LivingLabDataApp.db
 StravaTokens.txt

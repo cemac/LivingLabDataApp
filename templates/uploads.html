@@ -16,17 +16,20 @@
 
   {% if AllCPCFiles %}
     <h2>All Maps</h2>
-    <table class="table table-striped">
-      <tr>
-        <th>ID</th>
-        <th>CPC filename</th>
-        <th>Date of walk</th>
-        <th>Uploaded by</th>
-        <th>Upload date</th>
-        <th></th>
-        <th><div data-toggle="tooltip" title="Plot map showing only the selected route">Single route</div></th>
-        <th><div data-toggle="tooltip" title="Plot map showing the selected route and all other routes walked on the same day">Multiple routes</div></th>
-      </tr>
+    <table id="upload-table" class="table table-striped">
+      <thead>
+        <tr>
+            <th>ID</th>
+            <th>CPC filename</th>
+            <th>Date of walk</th>
+            <th>Uploaded by</th>
+            <th>Upload date</th>
+            <th></th>
+            <th><div data-toggle="tooltip" title="Plot map showing only the selected route">Single route</div></th>
+            <th><div data-toggle="tooltip" title="Plot map showing the selected route and all other routes walked on the same day">Multiple routes</div></th>
+        </tr>
+      </thead>
+      <tbody>
       {% for file in AllCPCFiles %}
         <tr>
           <td>{{file.id}}</td>
@@ -84,14 +87,22 @@
           </td>
         </tr>
       {% endfor %}
+      </tbody>
     </table>
   {% endif %}
 {% endblock %}
 
 {% block scripts %}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
     <script>
         $(document).ready(function(){
             $('.dropdown-toggle').dropdown();
+            $('#upload-table').DataTable({
+              columnDefs: [
+                  {targets: [5,6,7], orderable: false}
+              ]
+            });
         });
     </script>
 {% endblock %}

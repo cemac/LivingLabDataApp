@@ -31,7 +31,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd="/living-lab"
+subd=""
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -108,19 +108,22 @@ def average():
     if latest is not None:
         try:
             settings = MapSettings(colorProfile)
-            results = query_db('SELECT * FROM CPCFiles')
-            for result in results:
-                settings.addData(MapData(result['id']))
-            settings.getMeanLatLng()
+            #results = query_db('SELECT * FROM CPCFiles')
+            #for result in results:
+            #    settings.addData(MapData(result['id']))
+            # settings.getMeanLatLng()
             settings.mapTitle = "Long-term Average Concentration"
-            grid = Grid(settings.data, 'hex.geojson')
+
+            with open('static/average.json', 'r') as f:
+                averageGrid = f.read().replace('\n', '')
+
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
 
         return render_template('maps/average.html', subd=subd
                                , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
-                               , grid=json.dumps(grid.toJSON(), cls=ComplexEncoder)
+                               , grid=averageGrid
                                )
     else:
         return render_template('maps/average.html', subd=subd, settings=False)
@@ -269,6 +272,17 @@ def uploads():
             CPCFile.close()
             #save GPS dataframe
             GPSData.to_pickle(GPS_DIR+'/GPS_'+str(lastID)+'.pkl')
+            #calculate averages
+            results = query_db('SELECT * FROM CPCFiles')
+            dataset = {}
+            for result in results:
+                data = MapData(result['id'])
+                dataset[data.id] = data
+                grid = Grid('hex.geojson')
+                grid.getAverage(dataset)
+            with open('static/average.json', 'w+') as f:
+                f.seek(0)
+                json.dump(grid.toJSON(), f, cls=ComplexEncoder, indent=1)
             #return
             flash('File uploaded', 'success')
             return redirect(subd+'/uploads')
@@ -353,7 +367,7 @@ class MapSettings:
         self.mapTitle = ""
         self.binLims = []
         self.colsHex = []
-        self.midpoint = []
+        self.midpoint = [53.806571, -1.554926]      # centre of campus
         self.data = {}
 
         self.setBinColor(colorProfile)
@@ -435,7 +449,7 @@ class MapData:
 
 class Grid:
 
-    def __init__(self, data, csv):
+    def __init__(self, csv):
         self.cells = []
 
         shpCells = SpatialAnalysis.ReadGeoJSON('static/'+csv)
@@ -443,12 +457,12 @@ class Grid:
             cell = Cell(shpCell)
             self.cells.append(cell)
 
+    def getAverage(self, data):
         for dataset in data:
             self.cells = SpatialAnalysis.SpatialJoin(data[dataset], self.cells)
 
         for cell in self.cells:
             cell.average()
-
 
     def toJSON(self):
         return dict(

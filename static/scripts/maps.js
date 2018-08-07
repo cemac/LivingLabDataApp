@@ -65,7 +65,6 @@ function addGrid(grid, binLims, colsHex) {
                 for (var i = 0; i < cell.lats.length; i++) {
                     cellCoords.push({lat: cell.lons[i], lng: cell.lats[i]})
                 }
-
                 var color = getColor(cell.conc, binLims, colsHex)
 
                 // Construct the polygon.

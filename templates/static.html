@@ -6,13 +6,16 @@
 
   {% if AllOPCFiles %}
     <h2>All Monitoring Sites</h2>
-    <table class="table table-striped">
-      <tr>
-        <th>ID</th>
-        <th>OPC filename</th>
-        <th>Location Code</th>
-        <th>Upload date</th>
-      </tr>
+    <table id="static-table" class="table table-striped">
+      <thead>
+        <tr>
+            <th>ID</th>
+            <th>OPC filename</th>
+            <th>Location Code</th>
+            <th>Upload date</th>
+        </tr>
+      </thead>
+      <tbody>
       {% for file in AllOPCFiles %}
         <tr>
           <td>{{file.id}}</td>
@@ -25,9 +28,20 @@
           <td>{{file.upload_date}}</td>
         </tr>
       {% endfor %}
+      </tbody>
     </table>
   {% endif %}
 {% endblock %}
 
 {% block scripts %}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+    <script>
+        $(document).ready( function () {
+            $('#static-table').DataTable({
+                order: [[0, "desc"]]
+            });
+        } );
+    </script>
+
 {% endblock %}

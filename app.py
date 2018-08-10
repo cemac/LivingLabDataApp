@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 import os
 import GenerateCPCMap
 import SpatialAnalysis
+import Weather
 import pandas
 from dateutil.parser import parse
 import datetime as dt
@@ -88,50 +89,70 @@ def query_db(query, args=(), one=False):
 #Index
 @app.route('/')
 def index():
-    colorProfile = 'gr'
-    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+    # colorProfile = 'gr'
+    # latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+    #
+    # if latest is not None:
+    #     try:
+    #         settings = MapSettings(colorProfile)
+    #         mapClass = MapData(latest['id'])
+    #         startYMD = mapClass.parseYMD()
+    #         results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
+    #         for result in results:
+    #             settings.addData(MapData(result['id']))
+    #         settings.getArrayStats()
+    #     except Exception as e:
+    #         flash('Error generating map: ' + str(e), 'danger')
+    #         return redirect(subd + '/error')
+    #     return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
+    # else:
+    #     return render_template('home.html', subd=subd, settings=False)
 
-    if latest is not None:
+    if os.path.isfile('static/average.json'):
         try:
+            colorProfile = 'gr'
             settings = MapSettings(colorProfile)
-            mapClass = MapData(latest['id'])
-            startYMD = mapClass.parseYMD()
-            results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
-            for result in results:
-                settings.addData(MapData(result['id']))
-            settings.getArrayStats()
-        except Exception as e:
-            flash('Error generating map: ' + str(e), 'danger')
-            return redirect(subd + '/error')
-        return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
-    else:
-        return render_template('home.html', subd=subd, settings=False)
-
-#average
-@app.route('/maps/average')
-def average():
-    colorProfile = 'gr'
-    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
-
-    if latest is not None:
-        try:
-            settings = MapSettings(colorProfile)
-            results = query_db('SELECT * FROM CPCFiles')
-            for result in results:
-                settings.addData(MapData(result['id']))
-            settings.getArrayStats()
             settings.mapTitle = "Long-term Average Concentration"
-            grid = Grid(settings.data, 'hex.geojson')
+
+            with open('static/average.json', 'r') as f:
+                averageGrid = f.read().replace('\n', '')
+
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
 
         return render_template('maps/average.html', subd=subd
                                , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
-                               , grid=json.dumps(grid.toJSON(), cls=ComplexEncoder)
+                               , grid=averageGrid
                                )
     else:
         return render_template('maps/average.html', subd=subd, settings=False)
+
+
+# #average
+# @app.route('/maps/average')
+# def average():
+#     colorProfile = 'gr'
+#     latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+#
+#     if latest is not None:
+#         try:
+#             settings = MapSettings(colorProfile)
+#             settings.mapTitle = "Long-term Average Concentration"
+#
+#             with open('static/average.json', 'r') as f:
+#                 averageGrid = f.read().replace('\n', '')
+#
+#         except Exception as e:
+#             flash('Error generating map: ' + str(e), 'danger')
+#             return redirect(subd + '/error')
+#
+#         return render_template('maps/average.html', subd=subd
+#                                , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
+#                                , grid=averageGrid
+#                                )
+#     else:
+#         return render_template('maps/average.html', subd=subd, settings=False)
 
 
 #Register form class
@@ -277,7 +298,7 @@ def staticdata():
             return Response("{'a':'b'}", status=406, mimetype='application/json')
     AllOPCFiles = query_db('SELECT * FROM OPCFiles')
     if AllOPCFiles is not None:
-        AllOPCFiles = reversed(AllOPCFiles)
+        # AllOPCFiles = reversed(AllOPCFiles)
         return render_template('static.html', AllOPCFiles=AllOPCFiles, LoggedIn=('logged_in' in session),subd=subd)
     else:
         return render_template('static.html',LoggedIn=('logged_in' in session),subd=subd)
@@ -333,6 +354,17 @@ def uploads():
             CPCFile.close()
             #save GPS dataframe
             GPSData.to_pickle(GPS_DIR+'/GPS_'+str(lastID)+'.pkl')
+            #calculate averages
+            results = query_db('SELECT * FROM CPCFiles')
+            dataset = {}
+            for result in results:
+                data = MapData(result['id'])
+                dataset[data.id] = data
+                grid = Grid('hex.geojson')
+                grid.getAverage(dataset)
+            with open('static/average.json', 'w+') as f:
+                f.seek(0)
+                json.dump(grid.toJSON(), f, cls=ComplexEncoder, indent=1)
             #return
             flash('File uploaded', 'success')
             return redirect(subd+'/uploads')
@@ -342,35 +374,42 @@ def uploads():
     #If user just navigates to page
     AllCPCFiles = query_db('SELECT * FROM CPCFiles')
     if AllCPCFiles is not None:
-        AllCPCFiles = reversed(AllCPCFiles)
+        # AllCPCFiles = reversed(AllCPCFiles)
         return render_template('uploads.html', AllCPCFiles=AllCPCFiles, LoggedIn=('logged_in' in session),subd=subd)
     else:
         return render_template('uploads.html',LoggedIn=('logged_in' in session),subd=subd)
 
 
 #Maps
-@app.route('/maps/<string:id>/<string:mapType>/<string:colorProfile>')
-def maps(id,mapType,colorProfile):
+@app.route('/maps/<string:id>')
+def maps(id):
     if not os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         abort(404)
+
+    type = request.args.get('type') if request.args.get('type') else 'single'
+    colorProfile = request.args.get('color') if request.args.get('color') else 'gr'
 
     settings = MapSettings(colorProfile)
     mapClass = MapData(id)
 
-    if mapType == "multi":
+    if type == "multi":
         startYMD = mapClass.parseYMD()
         results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD)+'%',))
 
         for result in results:
             settings.addData(MapData(result['id']))
-    elif mapType == 'single':
+    elif type == 'single':
         settings.addData(mapClass)
     else:
         abort(404)
 
     settings.getArrayStats()
+    datetime = parse(mapClass.startDate)
+    weatherData = Weather.fetchWeatherData(datetime)
 
-    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
+    settings.getArrayStats()
+
+    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=json.dumps(weatherData))
 
 
 #Delete CPC file
@@ -417,9 +456,9 @@ class MapSettings:
         self.mapTitle = ""
         self.binLims = []
         self.colsHex = []
-        self.midpoint = []
+        self.midpoint = [53.806571, -1.554926]      # centre of campus
         # extent is [SE point, NW point]
-        self.extent = []
+        self.extent = [0, 0]
         self.data = {}
 
         self.setBinColor(colorProfile)
@@ -446,7 +485,7 @@ class MapSettings:
             midpoints.append(arrstats['middle'])
             minpoints.append(arrstats['min'])
             maxpoints.append(arrstats['max'])
-        self.midpoint = GenerateCPCMap.elementMean(midpoints)
+        self.midpoint = GenerateCPCMap.elementMean(midpoints).tolist()
         self.extent.append(GenerateCPCMap.elementMin(minpoints))
         self.extent.append(GenerateCPCMap.elementMax(maxpoints))
 
@@ -456,9 +495,9 @@ class MapSettings:
             , mapTitle=self.mapTitle
             , binLims=self.binLims
             , colsHex=self.colsHex
-            , midpoint=self.midpoint.tolist()
-            , minpoint=self.extent[0].tolist()
-            , maxpoint=self.extent[1].tolist()
+            , midpoint=self.midpoint
+            , minpoint=self.extent[0]
+            , maxpoint=self.extent[1]
             , data=self.data
         )
 
@@ -507,7 +546,7 @@ class MapData:
 
 class Grid:
 
-    def __init__(self, data, csv):
+    def __init__(self, csv):
         self.cells = []
 
         shpCells = SpatialAnalysis.ReadGeoJSON('static/'+csv)
@@ -515,12 +554,12 @@ class Grid:
             cell = Cell(shpCell)
             self.cells.append(cell)
 
+    def getAverage(self, data):
         for dataset in data:
             self.cells = SpatialAnalysis.SpatialJoin(data[dataset], self.cells)
 
         for cell in self.cells:
             cell.average()
-
 
     def toJSON(self):
         return dict(

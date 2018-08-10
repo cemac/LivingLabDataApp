@@ -11,6 +11,7 @@ Purpose: Used to carryout spatial analysis on data using Shapely
 
 from shapely.geometry import shape
 from shapely.geometry import Point
+from shapely.geometry import geo
 import json
 from rtree import index
 

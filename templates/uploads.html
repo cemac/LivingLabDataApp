@@ -16,17 +16,20 @@
 
   {% if AllCPCFiles %}
     <h2>All Maps</h2>
-    <table class="table table-striped">
-      <tr>
-        <th>ID</th>
-        <th>CPC filename</th>
-        <th>Date of walk</th>
-        <th>Uploaded by</th>
-        <th>Upload date</th>
-        <th></th>
-        <th><div data-toggle="tooltip" title="Plot map showing only the selected route">Single route</div></th>
-        <th><div data-toggle="tooltip" title="Plot map showing the selected route and all other routes walked on the same day">Multiple routes</div></th>
-      </tr>
+    <table id="upload-table" class="table table-striped">
+      <thead>
+        <tr>
+            <th>ID</th>
+            <th>CPC filename</th>
+            <th>Date of walk</th>
+            <th>Uploaded by</th>
+            <th>Upload date</th>
+            <th></th>
+            <th><div data-toggle="tooltip" title="Plot map showing only the selected route">Single route</div></th>
+            <th><div data-toggle="tooltip" title="Plot map showing the selected route and all other routes walked on the same day">Multiple routes</div></th>
+        </tr>
+      </thead>
+      <tbody>
       {% for file in AllCPCFiles %}
         <tr>
           <td>{{file.id}}</td>
@@ -63,9 +66,9 @@
                     <span class="caret"></span>
                   </button>
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenuSingle_{{file.id}}">
-                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/single/gr" target="_blank">Green-Red Scale</a></li>
-                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/single/bg" target="_blank">Blue-Green Scale</a></li>
-                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/single/by" target="_blank">Blue-Yellow Scale</a></li>
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}?type=single&color=gr" target="_blank">Green-Red Scale</a></li>
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}?type=single&color=bg" target="_blank">Blue-Green Scale</a></li>
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}?type=single&color=by" target="_blank">Blue-Yellow Scale</a></li>
                   </ul>
               </div>
           </td>
@@ -76,22 +79,31 @@
                     <span class="caret"></span>
                   </button>
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenuMulti_{{file.id}}">
-                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/multi/gr" target="_blank">Green-Red Scale</a></li>
-                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/multi/bg" target="_blank">Blue-Green Scale</a></li>
-                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}/multi/by" target="_blank">Black-Yellow Scale</a></li>
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}?type=multi&color=gr" target="_blank">Green-Red Scale</a></li>
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}?type=multi&color=bg" target="_blank">Blue-Green Scale</a></li>
+                    <li><a class="dropdown-item" href="{{subd}}/maps/{{file.id}}?type=multi&color=by" target="_blank">Black-Yellow Scale</a></li>
                   </ul>
               </div>
           </td>
         </tr>
       {% endfor %}
+      </tbody>
     </table>
   {% endif %}
 {% endblock %}
 
 {% block scripts %}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
     <script>
         $(document).ready(function(){
             $('.dropdown-toggle').dropdown();
+            var table = $('#upload-table').DataTable({
+              columnDefs: [
+                  {targets: [5,6,7], orderable: false}
+              ],
+                order: [[0, "desc"]]
+            });
         });
     </script>
 {% endblock %}

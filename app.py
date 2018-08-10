@@ -107,9 +107,7 @@ def index():
     # else:
     #     return render_template('home.html', subd=subd, settings=False)
 
-    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
-
-    if latest is not None:
+    if os.path.isfile('static/average.json'):
         try:
             colorProfile = 'gr'
             settings = MapSettings(colorProfile)

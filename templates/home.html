@@ -28,10 +28,6 @@ You can see the concentration map for the latest monitoring walk below and find 
         <div id="map"></div>
     {% endif %}
 
-    {% if weather != false %}
-        {% include 'includes/_weathertable.html' %}
-    {% endif %}
-
 {% endblock %}
 
 {% block scripts %}
@@ -58,15 +54,6 @@ You can see the concentration map for the latest monitoring walk below and find 
                     addCPCLines(MapData.lats, MapData.lons, MapData.concs, settings.binLims, settings.colsHex);
                 }
             }
-        {% endif %}
-        {% if weather != False %}
-            var weather = JSON.parse('{{ weather | safe }}');
-            $.each(weather, function(i, val){
-                $.each(val, function(j, val2){
-                    var row = '<tr> <td>'+ i +' </td> <td>' + val2 + '</td></tr>'
-                    $('#weather-table').append(row)
-                })
-            })
         {% endif %}
     </script>
 

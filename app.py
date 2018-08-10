@@ -95,13 +95,12 @@ def index():
             settings.getMeanLatLng()
 
             datetime = parse(mapClass.startDate)
-            hourlyWeather = Weather.fetchWeatherData(datetime)
-            weatherdata = hourlyWeather.iloc[[datetime.hour]]
+            weatherData = Weather.fetchWeatherData(datetime)
 
         except Exception as e:
             flash('Error generating map: ' + str(e), 'danger')
             return redirect(subd + '/error')
-        return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=weatherdata.to_json())
+        return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=json.dumps(weatherData))
     else:
         return render_template('home.html', subd=subd, settings=False)
 
@@ -285,12 +284,11 @@ def maps(id,mapType,colorProfile):
         abort(404)
 
     datetime = parse(mapClass.startDate)
-    hourlyWeather = Weather.fetchWeatherData(datetime)
-    weatherdata = hourlyWeather.iloc[[datetime.hour]]
+    weatherData = Weather.fetchWeatherData(datetime)
 
     settings.getMeanLatLng()
 
-    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=weatherdata.to_json())
+    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=json.dumps(weatherData))
 
 
 #Delete CPC file

@@ -44,12 +44,11 @@
 
         {% if weather != False %}
             var weather = JSON.parse('{{ weather | safe }}');
-            $.each(weather, function(i, val){
-                $.each(val, function(j, val2){
-                    var row = '<tr> <td>'+ i +' </td> <td>' + val2 + '</td></tr>'
-                    $('#weather-table').append(row)
-                })
+            Object.keys(weather).forEach(function(key) {
+                var row = '<tr> <td>'+ key +' </td> <td>' + weather[key] + '</td></tr>'
+                $('#weather-table').append(row)
             })
+
         {% endif %}
 
     </script>

@@ -89,25 +89,6 @@ def query_db(query, args=(), one=False):
 #Index
 @app.route('/')
 def index():
-    # colorProfile = 'gr'
-    # latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
-    #
-    # if latest is not None:
-    #     try:
-    #         settings = MapSettings(colorProfile)
-    #         mapClass = MapData(latest['id'])
-    #         startYMD = mapClass.parseYMD()
-    #         results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
-    #         for result in results:
-    #             settings.addData(MapData(result['id']))
-    #         settings.getArrayStats()
-    #     except Exception as e:
-    #         flash('Error generating map: ' + str(e), 'danger')
-    #         return redirect(subd + '/error')
-    #     return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
-    # else:
-    #     return render_template('home.html', subd=subd, settings=False)
-
     if os.path.isfile('static/average.json'):
         try:
             colorProfile = 'gr'
@@ -127,33 +108,6 @@ def index():
                                )
     else:
         return render_template('maps/average.html', subd=subd, settings=False)
-
-
-# #average
-# @app.route('/maps/average')
-# def average():
-#     colorProfile = 'gr'
-#     latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
-#
-#     if latest is not None:
-#         try:
-#             settings = MapSettings(colorProfile)
-#             settings.mapTitle = "Long-term Average Concentration"
-#
-#             with open('static/average.json', 'r') as f:
-#                 averageGrid = f.read().replace('\n', '')
-#
-#         except Exception as e:
-#             flash('Error generating map: ' + str(e), 'danger')
-#             return redirect(subd + '/error')
-#
-#         return render_template('maps/average.html', subd=subd
-#                                , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
-#                                , grid=averageGrid
-#                                )
-#     else:
-#         return render_template('maps/average.html', subd=subd, settings=False)
-
 
 #Register form class
 class RegisterForm(Form):
@@ -360,8 +314,8 @@ def uploads():
             for result in results:
                 data = MapData(result['id'])
                 dataset[data.id] = data
-                grid = Grid('hex.geojson')
-                grid.getAverage(dataset)
+            grid = Grid('hex.geojson')
+            grid.getAverage(dataset)
             with open('static/average.json', 'w+') as f:
                 f.seek(0)
                 json.dump(grid.toJSON(), f, cls=ComplexEncoder, indent=1)

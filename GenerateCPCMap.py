@@ -192,8 +192,7 @@ def elementMax(arr):
     return np.max(arr, axis=0)
 
 def CreateBins(file):
-    #binLims=[1000,2000,3000,4000,5000,7500,10000,15000,20000]
-    binLims = np.loadtxt(file, delimiter=',', dtype='int', skiprows=1)
+    binLims = np.loadtxt(file, delimiter=',', dtype='int', skiprows=1, encoding='utf-8')
     return binLims
 
 def AssignColours(binLims, colorProfile):

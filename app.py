@@ -381,21 +381,24 @@ def uploads():
 
 
 #Maps
-@app.route('/maps/<string:id>/<string:mapType>/<string:colorProfile>')
-def maps(id,mapType,colorProfile):
+@app.route('/maps/<string:id>')
+def maps(id):
     if not os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         abort(404)
+
+    type = request.args.get('type') if request.args.get('type') else 'single'
+    colorProfile = request.args.get('color') if request.args.get('color') else 'gr'
 
     settings = MapSettings(colorProfile)
     mapClass = MapData(id)
 
-    if mapType == "multi":
+    if type == "multi":
         startYMD = mapClass.parseYMD()
         results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD)+'%',))
 
         for result in results:
             settings.addData(MapData(result['id']))
-    elif mapType == 'single':
+    elif type == 'single':
         settings.addData(mapClass)
     else:
         abort(404)

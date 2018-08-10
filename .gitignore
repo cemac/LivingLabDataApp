@@ -10,3 +10,4 @@ deleted/
 static/colourbar*
 venv/
 .idea/
+static/average.json

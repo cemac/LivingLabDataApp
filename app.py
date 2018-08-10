@@ -34,7 +34,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 #Set subdomain...
 #If running locally (or index is the domain) set to blank, i.e. subd=""
 #If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd="/living-lab"
+subd=""
 
 #Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -88,33 +88,30 @@ def query_db(query, args=(), one=False):
 #Index
 @app.route('/')
 def index():
-    colorProfile = 'gr'
+    # colorProfile = 'gr'
+    # latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+    #
+    # if latest is not None:
+    #     try:
+    #         settings = MapSettings(colorProfile)
+    #         mapClass = MapData(latest['id'])
+    #         startYMD = mapClass.parseYMD()
+    #         results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
+    #         for result in results:
+    #             settings.addData(MapData(result['id']))
+    #         settings.getArrayStats()
+    #     except Exception as e:
+    #         flash('Error generating map: ' + str(e), 'danger')
+    #         return redirect(subd + '/error')
+    #     return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
+    # else:
+    #     return render_template('home.html', subd=subd, settings=False)
+
     latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
 
     if latest is not None:
         try:
-            settings = MapSettings(colorProfile)
-            mapClass = MapData(latest['id'])
-            startYMD = mapClass.parseYMD()
-            results = query_db('SELECT * FROM CPCFiles WHERE start_date LIKE ?', (str(startYMD) + '%',))
-            for result in results:
-                settings.addData(MapData(result['id']))
-            settings.getArrayStats()
-        except Exception as e:
-            flash('Error generating map: ' + str(e), 'danger')
-            return redirect(subd + '/error')
-        return render_template('home.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
-    else:
-        return render_template('home.html', subd=subd, settings=False)
-
-#average
-@app.route('/maps/average')
-def average():
-    colorProfile = 'gr'
-    latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
-
-    if latest is not None:
-        try:
+            colorProfile = 'gr'
             settings = MapSettings(colorProfile)
             settings.mapTitle = "Long-term Average Concentration"
 
@@ -131,6 +128,32 @@ def average():
                                )
     else:
         return render_template('maps/average.html', subd=subd, settings=False)
+
+
+# #average
+# @app.route('/maps/average')
+# def average():
+#     colorProfile = 'gr'
+#     latest = query_db('SELECT * FROM CPCFiles ORDER BY start_date DESC', one=True)
+#
+#     if latest is not None:
+#         try:
+#             settings = MapSettings(colorProfile)
+#             settings.mapTitle = "Long-term Average Concentration"
+#
+#             with open('static/average.json', 'r') as f:
+#                 averageGrid = f.read().replace('\n', '')
+#
+#         except Exception as e:
+#             flash('Error generating map: ' + str(e), 'danger')
+#             return redirect(subd + '/error')
+#
+#         return render_template('maps/average.html', subd=subd
+#                                , settings=json.dumps(settings.toJSON(), cls=ComplexEncoder)
+#                                , grid=averageGrid
+#                                )
+#     else:
+#         return render_template('maps/average.html', subd=subd, settings=False)
 
 
 #Register form class
@@ -276,7 +299,7 @@ def staticdata():
             return Response("{'a':'b'}", status=406, mimetype='application/json')
     AllOPCFiles = query_db('SELECT * FROM OPCFiles')
     if AllOPCFiles is not None:
-        AllOPCFiles = reversed(AllOPCFiles)
+        # AllOPCFiles = reversed(AllOPCFiles)
         return render_template('static.html', AllOPCFiles=AllOPCFiles, LoggedIn=('logged_in' in session),subd=subd)
     else:
         return render_template('static.html',LoggedIn=('logged_in' in session),subd=subd)
@@ -352,7 +375,7 @@ def uploads():
     #If user just navigates to page
     AllCPCFiles = query_db('SELECT * FROM CPCFiles')
     if AllCPCFiles is not None:
-        AllCPCFiles = reversed(AllCPCFiles)
+        # AllCPCFiles = reversed(AllCPCFiles)
         return render_template('uploads.html', AllCPCFiles=AllCPCFiles, LoggedIn=('logged_in' in session),subd=subd)
     else:
         return render_template('uploads.html',LoggedIn=('logged_in' in session),subd=subd)

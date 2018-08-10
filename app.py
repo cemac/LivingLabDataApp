@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 import os
 import GenerateCPCMap
 import SpatialAnalysis
+import Weather
 import pandas
 from dateutil.parser import parse
 import datetime as dt
@@ -400,8 +401,12 @@ def maps(id,mapType,colorProfile):
         abort(404)
 
     settings.getArrayStats()
+    datetime = parse(mapClass.startDate)
+    weatherData = Weather.fetchWeatherData(datetime)
 
-    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder))
+    settings.getMeanLatLng()
+
+    return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=json.dumps(weatherData))
 
 
 #Delete CPC file

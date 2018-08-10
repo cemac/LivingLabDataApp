@@ -404,7 +404,7 @@ def maps(id,mapType,colorProfile):
     datetime = parse(mapClass.startDate)
     weatherData = Weather.fetchWeatherData(datetime)
 
-    settings.getMeanLatLng()
+    settings.getArrayStats()
 
     return render_template('maps/index.html', subd=subd, settings=json.dumps(settings.toJSON(), cls=ComplexEncoder), weather=json.dumps(weatherData))
 

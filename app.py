@@ -359,7 +359,10 @@ def maps(id):
 
     settings.getArrayStats()
     datetime = parse(mapClass.startDate)
-    weatherData = Weather.fetchWeatherData(datetime)
+    try:
+        weatherData = Weather.fetchWeatherData(datetime)
+    except:
+        weatherData = False
 
     settings.getArrayStats()
 

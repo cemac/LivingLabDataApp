@@ -269,6 +269,7 @@ def downloadOPCData(id):
 
 #Uploads
 @app.route('/uploads', methods=["GET","POST"])
+@is_logged_in
 def uploads():
     #If user tries to upload a file
     if request.method == 'POST':
@@ -336,6 +337,7 @@ def uploads():
 
 #Maps
 @app.route('/maps/<string:id>')
+@is_logged_in
 def maps(id):
     if not os.path.exists(GPS_DIR+'/GPS_'+id+'.pkl'):
         abort(404)
@@ -398,6 +400,7 @@ def delete_CPCFile(id):
 
 #Download CPC file
 @app.route('/download/<string:id>', methods=['POST'])
+@is_logged_in
 def download(id):
     filename = query_db('SELECT * FROM CPCFiles WHERE id = ?',(id,),one=True)['filename']
     if os.path.exists(CPC_DIR+'/CPC_'+id+'.csv'):

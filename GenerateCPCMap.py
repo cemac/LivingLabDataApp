@@ -192,6 +192,10 @@ def elementMax(arr):
     return np.max(arr, axis=0)
 
 def CreateBins(file):
+    #The below hack is needed because the 'encoding' argument to np.loadtxt only exists
+    #in numpy v1.14 and later. The production server uses numpy 1.14 whereas the faculty
+    #python modules currently use an older version. The 'encoding' argument seems to be
+    #required on the production server, or it crashes.
     try:
         if float(np.version.version[0:4]) >= 1.14:
             binLims = np.loadtxt(file, delimiter=',', dtype='int', skiprows=1, encoding='utf-8')

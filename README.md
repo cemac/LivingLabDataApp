@@ -59,13 +59,13 @@ To make changes to the GitHub repo:
     -   You can then keep your local forked repo up-to-date with any changes to the main repo using:
         `$ git fetch upstream; git merge upstream`
         OR
-        ``$ git pull upstream master\`
+        `$ git pull upstream master\`
     -   Make a new branch for a particular new development/bug fix:
         `$ git checkout -b branchName`
     -   Commit changes locally as normal, and push to the remote forked repo using:
         `$ git push origin branchName`
     -   Once happy with your changes, open a pull request (PR) from your remote forked repo's GitHub page
-    -   This PR wil be reviewed by one of the code owners and, once any follow-up changes are made, pulled into th main repo
+    -   This PR will be reviewed by one of the code owners and, once any follow-up changes are made, pulled into the main repo
     -   It is then good practice to delete the branch in both the remote forked repo (can be done via GitHub) and the local forked repo:
         `$ git branch -d branchName`
 

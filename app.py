@@ -35,7 +35,7 @@ assert os.path.exists('StravaTokens.txt'), "Unable to locate Strava tokens"
 # Set subdomain...
 # If running locally (or index is the domain) set to blank, i.e. subd=""
 # If index is a subdomain, set as appropriate *including* leading slash, e.g. subd="/living-lab"
-subd = ""
+subd = "/living-lab"
 
 # Create directories if needed:
 if not os.path.isdir(CPC_DIR):
@@ -591,4 +591,4 @@ def error():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

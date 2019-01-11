@@ -1,69 +1,60 @@
 {% extends 'layout.html' %}
 
 {% block styles %}
-<style>
-  #map {
-    height: 600px;
-    width: 80%;
-    margin: 3% auto
-  }
-</style>
+    <style>
+       #map
+       {
+           height: 600px;
+           width: 80%;
+           margin: 3% auto
+       }
+    </style>
 {% endblock %}
 
 {% block body %}
-<h1 style="text-align:center;" id="map-title"></h1>
-<p style="text-align:center;"><img id="colourbar" src="" alt="colourbar" style="width:750px;"></p>
-<div id="map"></div>
+    <h1 style="text-align:center;" id="map-title"></h1>
+    <p style="text-align:center;"><img id="colourbar" src="" alt="colourbar" style="width:750px;"></p>
+    <div id="map"></div>
 
-{% if weather != 'false' %}
-{% include 'includes/_weathertable.html' %}
-{% endif %}
+    {% if weather != 'false' %}
+        {% include 'includes/_weathertable.html' %}
+    {% endif %}
 
 {% endblock %}
 
 {% block scripts %}
-<script src="{{subd}}/static/scripts/maps.js"></script>
+    <script src="{{subd}}/static/scripts/maps.js"></script>
 
-<script>
-  var map;
-  var settings = JSON.parse('{{ settings | safe }}');
+    <script>
+        var map;
+        var settings = JSON.parse('{{ settings | safe }}');
+        $('#map-title').text(settings['mapTitle'])
+        $('#colourbar').attr("src", settings['colorbar']);
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 16,
+                center: {lat: settings.midpoint[0], lng: settings.midpoint[1]},
+                mapTypeId: 'hybrid'
+            });
+            // set extent to fit all data
+            var southwest = new google.maps.LatLng(settings['minpoint'][0], settings['minpoint'][1])
+            var northeast = new google.maps.LatLng(settings['maxpoint'][0], settings['maxpoint'][1])
+            var llb = new google.maps.LatLngBounds(southwest, northeast)
+            map.fitBounds(llb)
+            dataToLines(settings.data, settings.binLims, settings.colsHex)
+            console.log(settings.data);
+        }
+        {% if weather != 'false' %}
+            var weather = JSON.parse('{{ weather | safe }}');
+            Object.keys(weather).forEach(function(key) {
+                var row = '<tr> <td>'+ key +' </td> <td>' + weather[key] + '</td></tr>'
+                $('#weather-table').append(row)
+            })
+        {% endif %}
+    </script>
 
-  $('#map-title').text(settings['mapTitle'])
-  $('#colourbar').attr("src", settings['colorbar']);
-
-  function initMap() {
-    map = new google.maps.Map(document.getElementById('map'), {
-      zoom: 16,
-      center: {
-        lat: settings.midpoint[0],
-        lng: settings.midpoint[1]
-      },
-      mapTypeId: 'hybrid'
-    });
-
-    // set extent to fit all data
-    var southwest = new google.maps.LatLng(settings['minpoint'][0], settings['minpoint'][1])
-    var northeast = new google.maps.LatLng(settings['maxpoint'][0], settings['maxpoint'][1])
-    var llb = new google.maps.LatLngBounds(southwest, northeast)
-    map.fitBounds(llb)
-
-    dataToLines(settings.data, settings.binLims, settings.colsHex)
-    console.log(settings.data);
-
-
-  }
-
-  {% if weather != 'false' %}
-  var weather = JSON.parse('{{ weather | safe }}');
-  Object.keys(weather).forEach(function(key) {
-    var row = '<tr> <td>' + key + ' </td> <td>' + weather[key] + '</td></tr>'
-    $('#weather-table').append(row)
-  })
-
-  {% endif %}
-</script>
-
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=" + mykey + "=initMap">
-</script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxHEzf7TNaVsha6owD_DgbZwzX16_cCcE&callback=initMap">
+    </script>
 
 {% endblock %}

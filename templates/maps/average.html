@@ -1,67 +1,62 @@
 {% extends 'layout.html' %}
 
 {% block styles %}
-<style>
-  #map {
-    height: 600px;
-    width: 80%;
-    margin: 3% auto
-  }
-</style>
+    <style>
+       #map
+       {
+           height: 600px;
+           width: 80%;
+           margin: 3% auto
+       }
+    </style>
 {% endblock %}
 
 {% block body %}
-<div class="jumbotron text-center">
-  <h1>Welcome to Living Lab for Air Quality: Data</h1>
-  <p class="lead">
-    Ever wondered about air quality across different areas of The University of Leeds?
-    A team of staff and student volunteers have been helping us to collect measurements by regularly walking around campus with particulate matter counters.
-    This is part of the <a href="http://sustainability.leeds.ac.uk/the-living-lab/" target="_blank">Living Lab for Air Quality</a> project –
-    a collaboration between operational and academic teams to build knowledge which supports our aims to improve health and environment at the University.
-    <br>
-    You can see the long-term average concentration map (over all walks) below.
-    <br>
-    <a href="{{subd}}/login">Logged in</a> users can upload new walks and see the archive of all walks to date.
+  <div class="jumbotron text-center">
+    <h1>Welcome to Living Lab for Air Quality: Data</h1>
+    <p class="lead">
+      Ever wondered about air quality across different areas of The University of Leeds?
+      A team of staff and student volunteers have been helping us to collect measurements by regularly walking around campus with particulate matter counters.
+      This is part of the <a href="http://sustainability.leeds.ac.uk/the-living-lab/" target="_blank">Living Lab for Air Quality</a> project –
+      a collaboration between operational and academic teams to build knowledge which supports our aims to improve health and environment at the University.
+      <br>
+      You can see the long-term average concentration map (over all walks) below.
+      <br>
+      <a href="{{subd}}/login">Logged in</a> users can upload new walks and see the archive of all walks to date.
     <p>
-</div>
-{% if settings != false %}
-<h1 style="text-align:center;" id="map-title"></h1>
-<p style="text-align:center;"><img id='colourbar' src="" alt="colour bar" style="width:750px;"></p>
-<div id="map"></div>
-{% endif %}
+  </div>
+    {% if settings != false %}
+        <h1 style="text-align:center;" id="map-title"></h1>
+        <p style="text-align:center;"><img id='colourbar' src="" alt="colour bar" style="width:750px;"></p>
+        <div id="map"></div>
+    {% endif %}
 
 {% endblock %}
 
 {% block scripts %}
-<script src="{{subd}}/static/scripts/maps.js"></script>
+    <script src="{{subd}}/static/scripts/maps.js"></script>
 
-<script>
-  {#jinja templates will ignore javascript conditionals and fill in variables first#}
-  {%if settings != false %}
-  var settings = JSON.parse('{{ settings | safe}}');
-  var grid = JSON.parse('{{ grid | safe }}');
-  var map;
+    <script>
+        {#  jinja templates will ignore javascript conditionals and fill in variables first  #}
+        {% if settings != false %}
+            var settings = JSON.parse('{{ settings | safe}}');
+            var grid = JSON.parse('{{ grid | safe }}');
+            var map;
+            $('#colourbar').attr("src", settings['colorbar']);
+            $('#map-title').text(settings['mapTitle'])
+            function initMap() {
+                map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 16,
+                    center: {lat: settings['midpoint'][0], lng: settings['midpoint'][1]},
+                    mapTypeId: 'hybrid'
+                });
+                addGrid(grid, settings.binLims, settings.colsHex)
+            }
+        {% endif %}
+    </script>
 
-  $('#colourbar').attr("src", settings['colorbar']);
-  $('#map-title').text(settings['mapTitle'])
-
-
-  function initMap() {
-    map = new google.maps.Map(document.getElementById('map'), {
-      zoom: 16,
-      center: {
-        lat: settings['midpoint'][0],
-        lng: settings['midpoint'][1]
-      },
-      mapTypeId: 'hybrid'
-    });
-
-    addGrid(grid, settings.binLims, settings.colsHex)
-  }
-  {% endif %}
-</script>
-
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=" + mykey + "&callback=initMap">
-</script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxHEzf7TNaVsha6owD_DgbZwzX16_cCcE&callback=initMap">
+    </script>
 
 {% endblock %}

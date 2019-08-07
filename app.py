@@ -445,7 +445,7 @@ class MapSettings:
         self.colsHex = []
         self.midpoint = [53.806571, -1.554926]      # centre of campus
         # extent is [SE point, NW point]
-        self.extent = [0, 0]
+        self.extent = []
         self.data = {}
 
         self.setBinColor(colorProfile)
@@ -477,8 +477,8 @@ class MapSettings:
             minpoints.append(arrstats['min'])
             maxpoints.append(arrstats['max'])
         self.midpoint = GenerateCPCMap.elementMean(midpoints).tolist()
-        self.extent.append(GenerateCPCMap.elementMin(minpoints))
-        self.extent.append(GenerateCPCMap.elementMax(maxpoints))
+        self.extent.append(GenerateCPCMap.elementMin(minpoints).tolist())
+        self.extent.append(GenerateCPCMap.elementMax(maxpoints).tolist())
 
     def toJSON(self):
         return dict(

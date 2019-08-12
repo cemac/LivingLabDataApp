@@ -36,13 +36,8 @@
 <script src="{{subd}}/static/scripts/maps.js"></script>
 
 <script>
-  {
-    #
-    jinja templates will ignore javascript conditionals and fill in variables first#
-  } {
-    %
-    if settings != false %
-  }
+  {# jinja templates will ignore javascript conditionals and fill in variables first #}
+  {% if settings != false %}
   var settings = JSON.parse('{{ settings | safe}}');
   var grid = JSON.parse('{{ grid | safe }}');
   var map;
@@ -59,13 +54,12 @@
       mapTypeId: 'hybrid'
     });
     addGrid(grid, settings.binLims, settings.colsHex)
-  } {
-    % endif %
-  }
+  } 
+  {% endif %}
 </script>
 
 <!-- DO NOT USE this API Key. It is locked to certain IP addresses. You must use your own API key -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?keyAIzaSyDtzzRI0koykwC7Sh25IcgKv18Fm8fOb_s=&callback=initMap">
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtzzRI0koykwC7Sh25IcgKv18Fm8fOb_s&callback=initMap">
 </script>
 
 {% endblock %}

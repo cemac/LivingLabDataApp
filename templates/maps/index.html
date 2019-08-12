@@ -46,17 +46,14 @@
     map.fitBounds(llb)
     dataToLines(settings.data, settings.binLims, settings.colsHex)
     console.log(settings.data);
-  } {
-    %
-    if weather != 'false' %
-  }
+  } 
+  {% if weather != 'false' %}
   var weather = JSON.parse('{{ weather | safe }}');
   Object.keys(weather).forEach(function(key) {
     var row = '<tr> <td>' + key + ' </td> <td>' + weather[key] + '</td></tr>'
     $('#weather-table').append(row)
-  }) {
-    % endif %
-  }
+  }) 
+  {% endif %}
 </script>
 
 <!-- Do not use this API Key, its is locked to certain IP addresses, you must use your own google API key -->

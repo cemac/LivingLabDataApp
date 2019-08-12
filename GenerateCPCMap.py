@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from stravalib.client import Client
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,9 +19,6 @@ Purpose: Used to generate an interactive google map showing concentration data
          collected by volunteers carrying a CPC (condensation particle counter)
          around Leeds University campus.
 """
-
-import matplotlib
-matplotlib.use('Agg')
 
 
 def ReadCPCFile(CPCtext):

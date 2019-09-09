@@ -590,5 +590,10 @@ def error():
     return render_template('error.html')
 
 
+@app.route('/privacy', methods=["GET"])
+def privacy():
+    return render_template('privacy.html.j2')
+
+
 if __name__ == '__main__':
     app.run()

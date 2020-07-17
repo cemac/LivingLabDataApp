@@ -29,7 +29,7 @@ The website is currently live at <https://cemac.leeds.ac.uk/living-lab/>.
 
 * git clone https://github.com/cemac/LivingLabDataApp.git
 * *Obtain or set AppSecretKey.txt and StravaTokens.txt*
-* conda create -f livinglab.yaml
+* conda env create -f livinglab.yaml
 * python app.py
 
 ## USAGE
